@@ -10,12 +10,26 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
+  const colors = Colors[colorScheme ?? 'dark'];
+  
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: colors.tabIconDefault,
         headerShown: false,
+        headerStyle: {
+          backgroundColor: colors.background,
+        },
+        headerTintColor: colors.text,
         tabBarButton: HapticTab,
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.backgroundSubtle,
+        },
+        contentStyle: {
+          backgroundColor: colors.background,
+        },
       }}>
       <Tabs.Screen
         name="index"
@@ -40,6 +54,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="garden"
+        options={{
+          title: 'Garden',
+          tabBarIcon: ({ color, focused }) => (
+            <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
+              <IconSymbol size={28} name="leaf.fill" color={color} />
+            </Animated.View>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="todos"
         options={{
           title: 'Todos',
@@ -57,6 +82,17 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
               <IconSymbol size={28} name="star.fill" color={color} />
+            </Animated.View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, focused }) => (
+            <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
+              <IconSymbol size={28} name="gearshape.fill" color={color} />
             </Animated.View>
           ),
         }}

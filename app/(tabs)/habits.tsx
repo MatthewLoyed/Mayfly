@@ -133,7 +133,7 @@ export default function HabitsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Add Habit"
           >
-            <ThemedText style={styles.fabText} lightColor="#FFFFFF" darkColor="#FFFFFF">+</ThemedText>
+            <ThemedText style={[styles.fabText, { color: '#FFFFFF' }]}>+</ThemedText>
           </TouchableOpacity>
         )}
 

@@ -221,6 +221,65 @@ export async function deleteHabit(habitId: string): Promise<void> {
 }
 
 /**
+ * Get habit completion history for a date range
+ */
+export async function getHabitCompletionsByDateRange(
+  startDate: string,
+  endDate: string
+): Promise<{ date: string; count: number }[]> {
+  const db = await getDatabase();
+  const rows = (await db.getAllAsync(
+    `SELECT completed_date, COUNT(*) as count 
+     FROM habit_completions 
+     WHERE completed_date >= ? AND completed_date <= ?
+     GROUP BY completed_date
+     ORDER BY completed_date ASC`,
+    [startDate, endDate]
+  )) as { completed_date: string; count: number }[];
+  
+  return rows.map((row) => ({
+    date: row.completed_date,
+    count: row.count,
+  }));
+}
+
+/**
+ * Get weekly completion stats (last 7 days)
+ */
+export async function getWeeklyStats(): Promise<{ date: string; count: number }[]> {
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // Last 7 days including today
+  
+  const startDate = format(sevenDaysAgo, 'yyyy-MM-dd');
+  const endDate = format(today, 'yyyy-MM-dd');
+  
+  return getHabitCompletionsByDateRange(startDate, endDate);
+}
+
+/**
+ * Get longest streak across all habits
+ */
+export async function getLongestStreak(): Promise<number> {
+  const db = await getDatabase();
+  const result = (await db.getFirstAsync(
+    'SELECT MAX(streak) as maxStreak FROM habits'
+  )) as { maxStreak: number } | undefined;
+  return result?.maxStreak || 0;
+}
+
+/**
+ * Get total completions count
+ */
+export async function getTotalCompletions(): Promise<number> {
+  const db = await getDatabase();
+  const result = (await db.getFirstAsync(
+    'SELECT COUNT(*) as count FROM habit_completions'
+  )) as { count: number } | undefined;
+  return result?.count || 0;
+}
+
+/**
  * Update habit name or color
  */
 export async function updateHabit(

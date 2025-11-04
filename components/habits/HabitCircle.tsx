@@ -315,23 +315,28 @@ const styles = StyleSheet.create({
   backContent: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: 12,
     gap: 6,
+    position: 'relative',
   },
   backTapArea: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 1,
   },
   backSpacer: {
     flex: 1,
   },
   backFooter: {
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginBottom: 8,
+    justifyContent: 'center',
   },
   backTitle: {
     fontSize: 16,

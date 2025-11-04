@@ -21,6 +21,8 @@ const MAPPING = {
   'circle.grid.3x3.fill': 'grid-view',
   'checklist': 'check-circle',
   'star.fill': 'star',
+  'gearshape.fill': 'settings',
+  'leaf.fill': 'eco',
 } as IconMapping;
 
 /**

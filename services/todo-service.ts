@@ -205,6 +205,37 @@ export async function getPriorityTodos(): Promise<Todo[]> {
 }
 
 /**
+ * Get todo completion statistics
+ */
+export async function getTodoStats(): Promise<{
+  total: number;
+  completed: number;
+  pending: number;
+  completionRate: number;
+}> {
+  const db = await getDatabase();
+  const total = (await db.getFirstAsync(
+    'SELECT COUNT(*) as count FROM todos'
+  )) as { count: number } | undefined;
+  
+  const completed = (await db.getFirstAsync(
+    'SELECT COUNT(*) as count FROM todos WHERE completed = 1'
+  )) as { count: number } | undefined;
+  
+  const totalCount = total?.count || 0;
+  const completedCount = completed?.count || 0;
+  const pendingCount = totalCount - completedCount;
+  const completionRate = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  
+  return {
+    total: totalCount,
+    completed: completedCount,
+    pending: pendingCount,
+    completionRate,
+  };
+}
+
+/**
  * Delete a todo
  */
 export async function deleteTodo(todoId: string): Promise<void> {
