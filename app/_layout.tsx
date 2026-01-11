@@ -27,7 +27,6 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               headerShown: false,
-              animation: 'ios',
               contentStyle: {
                 backgroundColor: Colors.dark.background,
               },

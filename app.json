@@ -3,6 +3,7 @@
     "name": "Mayfly",
     "slug": "Mayfly",
     "version": "1.0.0",
+    "scheme": "mayfly",
     "plugins": [
       "expo-web-browser"
     ]
