@@ -1,50 +1,50 @@
-# Welcome to your Expo app 👋
+# Mayfly v1.0 🦋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mayfly is a zen-inspired habit tracker and productivity app designed to make every day count. It combines task management with a "Butterfly Garden" where your habits bloom and a friendly character that reacts to your progress.
 
-## Get started
+## ✨ Features
 
-1. Install dependencies
+- **My Tasks**: A clean, prioritized todo list with inline deletion and auto-focus for quick entry.
+- **Butterfly Garden**: Tracks your recurring habits. Complete them to populate your garden.
+- **Character Moods**: An expressive character that monitors your interactions and habits to reflect your productivity.
+- **Cross-Platform Symmetry**:
+  - **Native**: Uses `expo-sqlite` for robust local storage.
+  - **Web**: Uses a high-performance in-memory shim for a seamless browser experience.
+- **Premium UI/UX**: Smooth transitions (v1.0), haptic feedback, and a custom animated splash screen.
 
+## 🚀 Getting Started
+
+1. **Install Dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. **Start the App**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. **Platforms**
+   - Press **i** for iOS Simulator.
+   - Press **a** for Android Emulator.
+   - Press **w** for Web version.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🛠️ Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Framework**: [Expo](https://expo.dev) / React Native
+- **Navigation**: Expo Router (File-based)
+- **Database**: 
+  - [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/) (Native)
+  - Custom In-memory SQLite Shim (Web)
+- **Animations**: [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/)
+- **Icons**: [Expo Symbols](https://docs.expo.dev/versions/latest/sdk/symbols/) (SF Symbols fallback)
 
-## Get a fresh project
+## 📁 Project Structure
 
-When you're ready, run:
+- `app/` - File-based routes and layouts.
+- `components/` - Reusable UI components (todos, habits, character).
+- `services/` - Core logic (database handlers, habit/todo services).
+- `constants/` - Theme colors and app constants.
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+*Created with ❤️ by Matthew Loyed*
