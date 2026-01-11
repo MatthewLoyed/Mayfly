@@ -1,14 +1,17 @@
 import { WeeksCharacter } from '@/components/character/WeeksCharacter';
+import { PriorityTodos } from '@/components/dashboard/PriorityTodos';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { WeeklyChart } from '@/components/dashboard/WeeklyChart';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getCharacterState } from '@/services/character-service';
 import { getDatabase } from '@/services/database';
-import { getAllHabits, getTodaysCompletions, getLongestStreak, getTotalCompletions, getWeeklyStats } from '@/services/habit-service';
+import { getAllHabits, getLongestStreak, getTodaysCompletions, getTotalCompletions, getWeeklyStats } from '@/services/habit-service';
 import { generateMessage } from '@/services/message-generator';
 import { getPriorityTodos, getTodoStats } from '@/services/todo-service';
-import { format, parseISO, eachDayOfInterval, subDays } from 'date-fns';
+import { eachDayOfInterval, format, subDays } from 'date-fns';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -26,7 +29,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  
+
   const [habitsCompleted, setHabitsCompleted] = useState(0);
   const [totalHabits, setTotalHabits] = useState(0);
   const [priorityTodos, setPriorityTodos] = useState<{ id: string; text: string }[]>([]);
@@ -49,7 +52,7 @@ export default function DashboardScreen() {
   const loadDashboardData = async () => {
     try {
       await getDatabase();
-      
+
       // Load habits
       const habits = await getAllHabits();
       const completed = await getTodaysCompletions();
@@ -57,7 +60,7 @@ export default function DashboardScreen() {
       setHabitsCompleted(completed);
       setLongestStreak(await getLongestStreak());
       setTotalCompletions(await getTotalCompletions());
-      
+
       // Load weekly data
       const weeklyStats = await getWeeklyStats();
       const today = new Date();
@@ -69,15 +72,15 @@ export default function DashboardScreen() {
         count: dataMap.get(format(date, 'yyyy-MM-dd')) || 0,
       }));
       setWeeklyData(fullWeekData);
-      
+
       // Load priority todos
       const priorities = await getPriorityTodos();
       setPriorityTodos(priorities.map((t) => ({ id: t.id, text: t.text })));
-      
+
       // Load todo stats
       const stats = await getTodoStats();
       setTodoStats(stats);
-      
+
       // Get character state and generate greeting
       const characterState = await getCharacterState();
       const { message } = generateMessage('daily_greeting');
@@ -113,7 +116,7 @@ export default function DashboardScreen() {
           <ThemedText type="title" style={styles.statsTitle}>
             Today
           </ThemedText>
-          
+
           <View style={styles.statCard}>
             <ThemedText type="defaultSemiBold" style={styles.statLabel}>
               Habits Completed
@@ -124,16 +127,7 @@ export default function DashboardScreen() {
           </View>
 
           {priorityTodos.length > 0 && (
-            <View style={styles.prioritySection}>
-              <ThemedText type="defaultSemiBold" style={styles.priorityTitle}>
-                Top {priorityTodos.length} Priorities
-              </ThemedText>
-              {priorityTodos.map((todo) => (
-                <View key={todo.id} style={styles.priorityItem}>
-                  <ThemedText style={styles.priorityText}>• {todo.text}</ThemedText>
-                </View>
-              ))}
-            </View>
+            <PriorityTodos todos={priorityTodos} />
           )}
         </ThemedView>
 
@@ -158,47 +152,7 @@ export default function DashboardScreen() {
           </View>
 
           {/* Weekly Chart */}
-          {weeklyData.length > 0 && (
-            <View style={styles.chartContainer}>
-              <ThemedText type="defaultSemiBold" style={styles.chartTitle}>
-                Last 7 Days
-              </ThemedText>
-              <View style={styles.chart}>
-                {weeklyData.map((dataPoint) => {
-                  const maxCount = Math.max(...weeklyData.map(d => d.count), 1);
-                  const height = maxCount > 0 ? (dataPoint.count / maxCount) * 100 : 0;
-                  const date = parseISO(dataPoint.date);
-                  const dayLabel = format(date, 'EEE');
-                  const dayNumber = format(date, 'd');
-                  
-                  return (
-                    <View key={dataPoint.date} style={styles.barContainer}>
-                      <View style={styles.barWrapper}>
-                        <View
-                          style={[
-                            styles.bar,
-                            {
-                              height: Math.max(height, dataPoint.count > 0 ? 4 : 0),
-                              backgroundColor: dataPoint.count > 0 ? colors.habitComplete : colors.habitIncomplete,
-                            },
-                          ]}
-                        />
-                        <ThemedText style={styles.barValue} darkColor="#999">
-                          {dataPoint.count}
-                        </ThemedText>
-                      </View>
-                      <ThemedText style={styles.barLabel} darkColor="#666">
-                        {dayLabel}
-                      </ThemedText>
-                      <ThemedText style={styles.barDayNumber} darkColor="#999">
-                        {dayNumber}
-                      </ThemedText>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          )}
+          <WeeklyChart data={weeklyData} colors={colors} />
 
           {/* Todo Stats */}
           {todoStats.total > 0 && (
@@ -240,11 +194,12 @@ export default function DashboardScreen() {
 
         {/* Quick navigation */}
         <View style={styles.navigationSection}>
-          <AnimatedNavButton
+          {/* Hidden but kept for potential future use */}
+          {/* <AnimatedNavButton
             backgroundColor={colors.primary}
             label="View Habits"
             onPress={() => router.push('/(tabs)/habits')}
-          />
+          /> */}
           <AnimatedNavButton
             backgroundColor={colors.secondary}
             label="View Todos"
@@ -256,18 +211,7 @@ export default function DashboardScreen() {
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <ThemedView style={[styles.statCard, { borderLeftColor: color }]}>
-      <ThemedText style={styles.statValue} darkColor={color}>
-        {value}
-      </ThemedText>
-      <ThemedText style={styles.statLabel} darkColor="#999">
-        {label}
-      </ThemedText>
-    </ThemedView>
-  );
-}
+
 
 const styles = StyleSheet.create({
   container: {
@@ -302,7 +246,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 16,
     borderRadius: 12,
-    backgroundColor: 'rgba(162, 155, 254, 0.15)', // Dark mode purple background
+    backgroundColor: 'rgba(162, 155, 254, 0.15)',
   },
   statLabel: {
     marginBottom: 8,
@@ -311,22 +255,6 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 32,
     fontWeight: 'bold',
-  },
-  prioritySection: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(162, 155, 254, 0.1)',
-  },
-  priorityTitle: {
-    marginBottom: 12,
-    opacity: 0.8,
-  },
-  priorityItem: {
-    marginBottom: 8,
-  },
-  priorityText: {
-    fontSize: 16,
   },
   navigationSection: {
     flexDirection: 'row',
@@ -337,65 +265,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: '45%',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    backgroundColor: 'rgba(162, 155, 254, 0.1)',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  chartContainer: {
-    marginTop: 8,
-  },
-  chartTitle: {
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  chart: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 140,
-    paddingHorizontal: 8,
-  },
-  barContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  barWrapper: {
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  bar: {
-    width: '80%',
-    minHeight: 4,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  barValue: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  barLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  barDayNumber: {
-    fontSize: 9,
-    marginTop: 2,
   },
   todoStatsContainer: {
     marginTop: 16,

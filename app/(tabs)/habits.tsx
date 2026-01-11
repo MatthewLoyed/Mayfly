@@ -4,7 +4,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { completeHabit, createHabit, deleteHabit, getAllHabits, getTodaysCompletions } from '@/services/habit-service';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddHabitForm } from '@/components/habits/AddHabitForm';
@@ -27,11 +27,7 @@ export default function HabitsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  useEffect(() => {
-    loadHabits();
-  }, []);
-
-  const loadHabits = async () => {
+  const loadHabits = React.useCallback(async () => {
     try {
       await initDatabase();
       const allHabits = await getAllHabits();
@@ -42,18 +38,22 @@ export default function HabitsScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadHabits();
+  }, [loadHabits]);
 
   const handleCompleteHabit = async (habitId: string) => {
     try {
       // Complete habit and get the updated habit object directly
       const updatedHabit = await completeHabit(habitId);
-      
+
       // Reload habits to update the UI
       await loadHabits();
-      
+
       const todaysCompletions = await getTodaysCompletions();
-      
+
       // Generate message using the updated habit data
       const context = getHabitCompletionContext({
         habitStreak: updatedHabit.streak,
@@ -62,14 +62,14 @@ export default function HabitsScreen() {
       const { message: msg, mood } = generateMessage(context, {
         habitStreak: updatedHabit.streak,
       });
-      
+
       // Update character state
       await updateCharacterState(mood);
-      
+
       // Show message
       setMessage(msg);
       setShowMessage(true);
-      
+
       // Auto-hide message
       setTimeout(() => {
         setShowMessage(false);
@@ -120,22 +120,32 @@ export default function HabitsScreen() {
           emptyMessage="No habits yet! Tap + to add your first habit."
           onDeleteHabit={handleDeleteHabit}
         />
-        
-        {isAdding && (
-          <AddHabitForm onSubmit={handleAddHabit} onCancel={() => setIsAdding(false)} />
-        )}
 
         {/* Floating add button */}
-        {!isAdding && (
-          <TouchableOpacity
-            style={[styles.fab, { backgroundColor: colors.primary }]}
-            onPress={() => setIsAdding(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Add Habit"
-          >
-            <ThemedText style={[styles.fabText, { color: '#FFFFFF' }]}>+</ThemedText>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={() => setIsAdding(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Add Habit"
+        >
+          <ThemedText style={[styles.fabText, { color: '#FFFFFF' }]}>+</ThemedText>
+        </TouchableOpacity>
+
+        {/* Modal overlay for adding habit */}
+        <Modal
+          visible={isAdding}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsAdding(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setIsAdding(false)}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+                <AddHabitForm onSubmit={handleAddHabit} onCancel={() => setIsAdding(false)} />
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
 
         {/* Character message */}
         {message && (
@@ -176,6 +186,19 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 28,
     fontWeight: '700',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
 });
 

@@ -19,7 +19,7 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
   };
 
   db = {
-    execAsync: async () => {},
+    execAsync: async () => { },
     runAsync: async (query: string, params: any[] = []) => {
       // Minimal in-memory handlers for todos
       if (query.startsWith('INSERT INTO habits')) {
@@ -131,6 +131,36 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
         memoryStore.todos = memoryStore.todos.filter((x) => x.id !== id);
         return;
       }
+
+      if (query.startsWith('INSERT INTO character_state')) {
+        const [mood, updated_at] = params;
+        // id is always 1
+        memoryStore.character_state[0] = {
+          id: 1,
+          mood,
+          total_interactions: 0,
+          last_interaction_date: null,
+          updated_at,
+        };
+        return;
+      }
+
+      if (query.startsWith('UPDATE character_state')) {
+        const c = memoryStore.character_state[0];
+        if (query.includes('total_interactions = total_interactions + 1')) {
+          // incrementInteractions
+          const [last_date, updated_at] = params;
+          c.total_interactions += 1;
+          c.last_interaction_date = last_date;
+          c.updated_at = updated_at;
+        } else {
+          // updateCharacterMood
+          const [mood, updated_at] = params;
+          c.mood = mood;
+          c.updated_at = updated_at;
+        }
+        return;
+      }
     },
     getFirstAsync: async (query: string, params: any[] = []) => {
       if (query.includes('FROM character_state')) {
@@ -142,10 +172,10 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
         const h = memoryStore.habits.find((x) => x.id === id);
         return h
           ? {
-              streak: h.streak,
-              last_completed_date: h.last_completed_date,
-              completed_today: h.completed_today,
-            }
+            streak: h.streak,
+            last_completed_date: h.last_completed_date,
+            completed_today: h.completed_today,
+          }
           : undefined;
       }
 
@@ -212,7 +242,7 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
       }
       return [] as any[];
     },
-    closeAsync: async () => {},
+    closeAsync: async () => { },
   } as SQLiteDatabase;
 
   return db;

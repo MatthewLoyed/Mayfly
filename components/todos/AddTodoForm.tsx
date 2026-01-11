@@ -51,7 +51,7 @@ export function AddTodoForm({ onSubmit, onCancel }: AddTodoFormProps) {
           autoFocus
         />
       </View>
-      
+
       <View style={styles.actions}>
         <TouchableOpacity
           style={[

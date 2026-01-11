@@ -1,9 +1,8 @@
-import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
-import { useThemeColor } from '@/hooks/use-theme-color';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 interface StreakIndicatorProps {
   streak: number;

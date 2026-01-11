@@ -14,12 +14,13 @@ interface TodoItemProps {
   onLongPress?: () => void;
   isActive?: boolean;
   onStartDrag?: () => void;
+  onDelete?: () => void;
 }
 
 /**
  * Individual todo item with circular checkbox
  */
-export function TodoItem({ todo, onToggle, onPress, onLongPress, isActive, onStartDrag }: TodoItemProps) {
+export function TodoItem({ todo, onToggle, onPress, onLongPress, isActive, onStartDrag, onDelete }: TodoItemProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -96,9 +97,9 @@ export function TodoItem({ todo, onToggle, onPress, onLongPress, isActive, onSta
                   style={[
                     styles.metaPill,
                     (todo.estimatedMinutes <= 5 && styles.metaGreen) ||
-                      (todo.estimatedMinutes > 60 && styles.metaRed) ||
-                      (todo.estimatedMinutes >= 15 && todo.estimatedMinutes <= 60 && styles.metaOrange) ||
-                      null,
+                    (todo.estimatedMinutes > 60 && styles.metaRed) ||
+                    (todo.estimatedMinutes >= 15 && todo.estimatedMinutes <= 60 && styles.metaOrange) ||
+                    null,
                   ]}
                 >
                   <ThemedText style={styles.metaPillText}>
@@ -112,7 +113,7 @@ export function TodoItem({ todo, onToggle, onPress, onLongPress, isActive, onSta
 
         {/* Priority indicator */}
         {todo.priority && !todo.completed && (
-          <View style={[styles.priorityBadge, { backgroundColor: colors.primary }]}> 
+          <View style={[styles.priorityBadge, { backgroundColor: colors.primary }]}>
             <ThemedText style={styles.priorityBadgeText} lightColor="#FFFFFF" darkColor="#FFFFFF">
               !
             </ThemedText>
@@ -128,8 +129,21 @@ export function TodoItem({ todo, onToggle, onPress, onLongPress, isActive, onSta
         >
           <ThemedText style={styles.dragHandleIcon}>≡</ThemedText>
         </TouchableOpacity>
+
+        {/* Delete button (only for completed items) */}
+        {todo.completed && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Delete Todo"
+            onPress={onDelete}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.deleteButton}
+          >
+            <ThemedText style={styles.deleteButtonText}>✕</ThemedText>
+          </TouchableOpacity>
+        )}
       </View>
-    </View>
+    </View >
   );
 }
 
@@ -226,6 +240,17 @@ const styles = StyleSheet.create({
   },
   metaRed: {
     borderColor: '#e74c3c',
+  },
+  deleteButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginLeft: 4,
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#e74c3c', // Red color for delete
+    opacity: 0.8,
   },
 });
 

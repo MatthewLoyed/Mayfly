@@ -30,10 +30,11 @@ export function TodoDetailsModal({ visible, todo, onClose, onSave }: TodoDetails
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.backdrop}>
-          <TouchableWithoutFeedback>
-            <ThemedView style={styles.sheet}>
+      <View style={styles.backdrop}>
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={StyleSheet.absoluteFill} />
+        </TouchableWithoutFeedback>
+        <ThemedView style={styles.sheet}>
           <ThemedText type="title" style={styles.title}>
             Todo Details
           </ThemedText>
@@ -86,21 +87,19 @@ export function TodoDetailsModal({ visible, todo, onClose, onSave }: TodoDetails
             </View>
           </View>
 
-              <View style={styles.footerRow}>
-                <TouchableOpacity style={styles.footerBtn} onPress={onClose}>
-                  <ThemedText>Cancel</ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.footerBtn}
-                  onPress={() => onSave({ dueAt, estimatedMinutes: estimated })}
-                >
-                  <ThemedText>Save</ThemedText>
-                </TouchableOpacity>
-              </View>
-            </ThemedView>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
+          <View style={styles.footerRow}>
+            <TouchableOpacity style={styles.footerBtn} onPress={onClose}>
+              <ThemedText>Cancel</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.footerBtn}
+              onPress={() => onSave({ dueAt, estimatedMinutes: estimated })}
+            >
+              <ThemedText>Save</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </ThemedView>
+      </View>
     </Modal>
   );
 }

@@ -1,20 +1,22 @@
+import { WeeksCharacter } from '@/components/character/WeeksCharacter';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
-import { WeeksCharacter } from '@/components/character/WeeksCharacter';
-import { CharacterMessage } from '@/components/character/CharacterMessage';
-import { generateMessage } from '@/services/message-generator';
 
 /**
  * Hobbies placeholder screen
  */
 export default function HobbiesScreen() {
   const message = "Hobbies coming soon! What makes you happy?";
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'dark'];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ThemedView style={styles.content}>
         <View style={styles.emptyContainer}>
           <WeeksCharacter size={120} mood="happy" animated={true} />

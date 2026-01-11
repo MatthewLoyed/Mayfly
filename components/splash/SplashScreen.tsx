@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  withSequence,
-  withDelay,
-  Easing,
-  runOnJS,
-} from 'react-native-reanimated';
-import * as SplashScreen from 'expo-splash-screen';
 import { WeeksCharacter } from '@/components/character/WeeksCharacter';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
+import * as SplashScreen from 'expo-splash-screen';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet } from 'react-native';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming
+} from 'react-native-reanimated';
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -83,7 +82,7 @@ export function AppSplashScreen({ onFinish }: SplashScreenProps) {
 
     // Small delay before starting animation
     setTimeout(startAnimation, 100);
-  }, []);
+  }, [characterY, onFinish, opacity, scale, textOpacity, textScale]);
 
   const containerStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

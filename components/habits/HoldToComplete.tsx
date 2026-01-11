@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import * as Haptics from 'expo-haptics';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { LongPressGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 
 interface HoldToCompleteProps {
   onComplete: () => void;
@@ -52,7 +52,7 @@ export function HoldToComplete({
     if (event.nativeEvent.state === State.ACTIVE) {
       setIsHolding(true);
       progress.value = withTiming(1, { duration });
-      
+
       // Trigger haptics at milestones
       clearHapticTimers();
       hapticTimers.current = [
@@ -82,6 +82,8 @@ export function HoldToComplete({
     <LongPressGestureHandler
       minDurationMs={duration}
       onHandlerStateChange={handleGestureStateChange}
+      maxDist={10}
+      shouldCancelWhenOutside={false}
     >
       <Animated.View style={[styles.container, animatedStyle]}>
         {children({ isHolding, progress: progress.value })}

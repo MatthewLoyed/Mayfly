@@ -6,11 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
-  interpolate,
 } from 'react-native-reanimated';
 
 interface ButterflyHabitProps {
@@ -18,6 +18,7 @@ interface ButterflyHabitProps {
   isHolding?: boolean;
   progress?: number; // 0-1 for hold progress
   onPress?: () => void;
+  size?: number; // Size of the habit circle
 }
 
 /**
@@ -53,7 +54,7 @@ function getButterflyStage(streak: number): {
   }
 }
 
-export function ButterflyHabit({ habit, isHolding = false, progress = 0, onPress }: ButterflyHabitProps) {
+export function ButterflyHabit({ habit, isHolding = false, progress = 0, onPress, size: propSize }: ButterflyHabitProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'dark'];
   const isComplete = habit.completedToday;
@@ -61,6 +62,7 @@ export function ButterflyHabit({ habit, isHolding = false, progress = 0, onPress
   const stage = getButterflyStage(habit.streak);
   const habitColor = habit.color || colors.tint;
   
+  const size = propSize || 140; // Default size if not provided
   const scaleValue = useSharedValue(1);
   const progressValue = useSharedValue(0);
   const flutterValue = useSharedValue(0);
@@ -116,7 +118,6 @@ export function ButterflyHabit({ habit, isHolding = false, progress = 0, onPress
     };
   });
 
-  const size = 140;
   const isCompleted = isComplete;
 
   return (
@@ -217,7 +218,7 @@ export function ButterflyHabit({ habit, isHolding = false, progress = 0, onPress
 
 const styles = StyleSheet.create({
   container: {
-    margin: 8,
+    // Margin removed - handled by parent
   },
   pressable: {
     width: '100%',

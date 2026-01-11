@@ -1,11 +1,11 @@
+import { AppSplashScreen } from "@/components/splash/SplashScreen";
+import { Colors } from "@/constants/theme";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Stack } from "expo-router";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { Colors } from "@/constants/theme";
-import { AppSplashScreen } from "@/components/splash/SplashScreen";
+import { StyleSheet, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function RootLayout() {
   const [isSplashReady, setIsSplashReady] = useState(false);
@@ -27,6 +27,7 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               headerShown: false,
+              animation: 'ios',
               contentStyle: {
                 backgroundColor: Colors.dark.background,
               },

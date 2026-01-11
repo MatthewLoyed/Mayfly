@@ -27,9 +27,6 @@ export default function TabLayout() {
           backgroundColor: colors.background,
           borderTopColor: colors.backgroundSubtle,
         },
-        contentStyle: {
-          backgroundColor: colors.background,
-        },
       }}>
       <Tabs.Screen
         name="index"
@@ -43,12 +40,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="habits"
+        name="todos"
         options={{
-          title: 'Habits',
+          title: 'Todos',
           tabBarIcon: ({ color, focused }) => (
             <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
-              <IconSymbol size={28} name="circle.grid.3x3.fill" color={color} />
+              <IconSymbol size={28} name="checklist" color={color} />
             </Animated.View>
           ),
         }}
@@ -64,13 +61,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Hidden but kept for potential future use */}
       <Tabs.Screen
-        name="todos"
+        name="habits"
         options={{
-          title: 'Todos',
+          href: null, // Hide from tab bar but keep route accessible
+          title: 'Habits',
           tabBarIcon: ({ color, focused }) => (
             <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
-              <IconSymbol size={28} name="checklist" color={color} />
+              <IconSymbol size={28} name="circle.grid.3x3.fill" color={color} />
             </Animated.View>
           ),
         }}

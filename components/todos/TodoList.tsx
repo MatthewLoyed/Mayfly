@@ -1,10 +1,11 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { reorderTodos } from '@/services/todo-service';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { type Todo } from '@/types/todo';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
-import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import { Animated, Easing, FlatList, Modal, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { AddTodoForm } from './AddTodoForm';
 import { TodoDetailsModal } from './TodoDetailsModal';
 import { TodoItem } from './TodoItem';
@@ -15,6 +16,7 @@ interface TodoListProps {
   onAddTodo: (text: string, priority: boolean) => void;
   emptyMessage?: string;
   onSaveDetails?: (todoId: string, details: { dueAt: string | null; estimatedMinutes: number | null }) => void | Promise<void>;
+  onDeleteTodo?: (todoId: string) => void;
 }
 
 /**
@@ -26,12 +28,16 @@ export function TodoList({
   onAddTodo,
   emptyMessage,
   onSaveDetails,
+  onDeleteTodo,
 }: TodoListProps) {
   const [showCompleted] = useState(true);
   const [localTodos, setLocalTodos] = useState<Todo[]>(todos);
   const [selected, setSelected] = useState<Todo | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const emptyPulse = useRef(new Animated.Value(0.6)).current;
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'dark'];
 
   useEffect(() => {
     setLocalTodos(todos);
@@ -40,7 +46,7 @@ export function TodoList({
   const visibleTodos = useMemo(() => {
     return showCompleted ? localTodos : localTodos.filter((t) => !t.completed);
   }, [localTodos, showCompleted]);
-  
+
   const completedCount = todos.filter((todo) => todo.completed).length;
   const totalCount = todos.length;
 
@@ -57,32 +63,26 @@ export function TodoList({
     }
   }, [visibleTodos.length, emptyPulse]);
 
+  const handleAddTodo = (text: string, priority: boolean) => {
+    onAddTodo(text, priority);
+    setIsAdding(false);
+  };
+
   return (
     <View style={styles.container}>
-      <AddTodoForm onSubmit={onAddTodo} />
-      
       {visibleTodos.length === 0 ? (
-        <Animated.View style={[styles.emptyContainer, { opacity: emptyPulse }] }>
+        <Animated.View style={[styles.emptyContainer, { opacity: emptyPulse }]}>
           <ThemedText type="subtitle" style={styles.emptyText}>
             {emptyMessage || "No todos yet. Add one to get started!"}
           </ThemedText>
         </Animated.View>
       ) : (
-        <DraggableFlatList
+        <FlatList
           style={styles.list}
           contentContainerStyle={styles.listContent}
           data={visibleTodos}
           keyExtractor={(item: Todo) => item.id}
-          // @ts-ignore activationDistance exists at runtime; typings may lag
-          activationDistance={1}
-          // Allow dragged item to overlap neighbors to help swapping
-          // @ts-ignore dragItemOverflow exists at runtime
-          dragItemOverflow
-          autoscrollThreshold={30}
-          onDragBegin={() => {
-            console.log('[TodoList] drag begin');
-          }}
-          renderItem={({ item, drag, isActive }: RenderItemParams<Todo>) => (
+          renderItem={({ item }) => (
             <TodoItem
               todo={item}
               onToggle={() => onToggleTodo(item.id)}
@@ -91,23 +91,14 @@ export function TodoList({
                 setShowDetails(true);
               }}
               onLongPress={undefined}
-              onStartDrag={drag}
-              isActive={isActive}
+              onStartDrag={() => { }}
+              onDelete={() => onDeleteTodo && onDeleteTodo(item.id)}
+              isActive={false}
             />
           )}
-          onDragEnd={async ({ data }: { data: Todo[] }) => {
-            // Since we currently show all todos, we can directly use the new order
-            setLocalTodos(data);
-            try {
-              const reorderedIds = data.map((t) => t.id);
-              await reorderTodos(reorderedIds);
-            } catch (e) {
-              console.warn('Failed to persist todo reorder', e);
-            }
-          }}
         />
       )}
-      
+
       {totalCount > 0 && (
         <ThemedView style={styles.footer}>
           <ThemedText style={styles.footerText}>
@@ -115,6 +106,33 @@ export function TodoList({
           </ThemedText>
         </ThemedView>
       )}
+
+      {/* Floating add button */}
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.primary }]}
+        onPress={() => setIsAdding(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Add Todo"
+      >
+        <IconSymbol name="plus" size={32} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      {/* Modal for adding todo */}
+      <Modal
+        visible={isAdding}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsAdding(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableWithoutFeedback onPress={() => setIsAdding(false)}>
+            <View style={StyleSheet.absoluteFill} />
+          </TouchableWithoutFeedback>
+          <View style={styles.modalContent}>
+            <AddTodoForm onSubmit={handleAddTodo} onCancel={() => setIsAdding(false)} />
+          </View>
+        </View>
+      </Modal>
 
       {/* Details modal - save handled by parent screen */}
       <TodoDetailsModal
@@ -149,7 +167,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 80,
   },
   emptyContainer: {
     flex: 1,
@@ -168,6 +186,34 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 14,
     opacity: 0.7,
+  },
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
 });
 

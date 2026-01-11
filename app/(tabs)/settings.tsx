@@ -1,18 +1,18 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getCharacterState } from '@/services/character-service';
 import { getDatabase } from '@/services/database';
 import { getAllHabits } from '@/services/habit-service';
 import { getAllTodos } from '@/services/todo-service';
-import { getCharacterState } from '@/services/character-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 
 /**
  * Settings screen with data export/import and clear data
@@ -57,7 +57,8 @@ export default function SettingsScreen() {
         Alert.alert('Success', 'Data exported successfully!');
       } else {
         // Mobile: save and share
-        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+        const docDir = (FileSystem as any).documentDirectory;
+        const fileUri = `${docDir}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, jsonString);
 
         if (await Sharing.isAvailableAsync()) {
@@ -87,17 +88,17 @@ export default function SettingsScreen() {
             try {
               // Clear AsyncStorage
               await AsyncStorage.clear();
-              
+
               // Clear database
               const db = await getDatabase();
               await db.execAsync('DELETE FROM habits');
               await db.execAsync('DELETE FROM habit_completions');
               await db.execAsync('DELETE FROM todos');
               await db.execAsync('DELETE FROM character_state');
-              
+
               // Reset character state
               const now = new Date().toISOString();
-              await db.execAsync(
+              await db.runAsync(
                 'INSERT INTO character_state (id, mood, total_interactions, updated_at) VALUES (1, ?, 0, ?)',
                 ['happy', now]
               );
@@ -139,7 +140,7 @@ export default function SettingsScreen() {
       activeOpacity={0.7}
     >
       <View style={styles.settingIcon}>
-        <IconSymbol name={icon} size={24} color={destructive ? colors.warning : colors.icon} />
+        <IconSymbol name={icon as any} size={24} color={destructive ? colors.warning : colors.icon} />
       </View>
       <View style={styles.settingContent}>
         <ThemedText type="defaultSemiBold" style={[styles.settingTitle, destructive && styles.destructiveText]}>
@@ -170,32 +171,9 @@ export default function SettingsScreen() {
       <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
         <ThemedView style={styles.section}>
           <ThemedText type="title" style={styles.sectionTitle}>
-            Data
-          </ThemedText>
-          
-          <SettingItem
-            icon="square.and.arrow.up"
-            title="Export Data"
-            subtitle="Download a backup of all your data"
-            onPress={handleExportData}
-            showArrow
-          />
-          
-          <SettingItem
-            icon="trash.fill"
-            title="Clear All Data"
-            subtitle="Permanently delete all habits, todos, and character data"
-            onPress={handleClearData}
-            destructive
-            showArrow
-          />
-        </ThemedView>
-
-        <ThemedView style={styles.section}>
-          <ThemedText type="title" style={styles.sectionTitle}>
             About
           </ThemedText>
-          
+
           <SettingItem
             icon="info.circle.fill"
             title="App Name"
@@ -207,6 +185,29 @@ export default function SettingsScreen() {
             title="App Version"
             subtitle="1.0.0"
             showArrow={false}
+          />
+        </ThemedView>
+
+        <ThemedView style={styles.section}>
+          <ThemedText type="title" style={styles.sectionTitle}>
+            Data
+          </ThemedText>
+
+          <SettingItem
+            icon="square.and.arrow.up"
+            title="Export Data"
+            subtitle="Download a backup of all your data"
+            onPress={handleExportData}
+            showArrow
+          />
+
+          <SettingItem
+            icon="trash.fill"
+            title="Clear All Data"
+            subtitle="Permanently delete all habits, todos, and character data"
+            onPress={handleClearData}
+            destructive
+            showArrow
           />
         </ThemedView>
       </ScrollView>

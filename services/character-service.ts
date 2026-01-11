@@ -1,17 +1,22 @@
+import { type CharacterMood, type CharacterState } from '@/types/character';
 import { getDatabase } from './database';
-import { type CharacterState, type CharacterMood } from '@/types/character';
 
 /**
  * Get current character state
  */
 export async function getCharacterState(): Promise<CharacterState> {
   const db = await getDatabase();
-  const state = await db.getFirstAsync<{
+
+  type CharacterStateRow = {
     mood: string;
     total_interactions: number;
     last_interaction_date: string | null;
     updated_at: string;
-  }>('SELECT * FROM character_state WHERE id = 1');
+  };
+
+  const state = await db.getFirstAsync(
+    'SELECT * FROM character_state WHERE id = 1'
+  ) as CharacterStateRow | undefined;
 
   if (!state) {
     // Initialize if doesn't exist
