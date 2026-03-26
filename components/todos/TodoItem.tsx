@@ -15,11 +15,15 @@ import {
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import Animated, {
+  FadeIn,
+  FadeOut,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { HapticType, TactileButton } from "../ui/TactileButton";
+
 
 interface TodoItemProps {
   todo: Todo;
@@ -275,7 +279,27 @@ export function TodoItem({
             </View>
           )}
 
+          {/* Subtle Delete Button for completed tasks */}
+          {onDelete && (
+            <Animated.View 
+              entering={FadeIn.duration(300)}
+              exiting={FadeOut.duration(200)}
+              style={styles.deleteButtonContainer}
+            >
+              <TactileButton
+                onPress={handleDelete}
+                style={[
+                  styles.subtleDeleteButton,
+                  { opacity: todo.completed ? 0.6 : 0.2 }
+                ]}
+                hapticType={HapticType.ImpactMedium}
+              >
+                <IconSymbol name="xmark" size={14} color={colors.textSecondary} />
+              </TactileButton>
+            </Animated.View>
+          )}
         </View>
+
       </Animated.View>
     </Swipeable>
   );
@@ -385,5 +409,17 @@ const styles = StyleSheet.create({
   },
   deleteActionButton: {
     padding: 16,
+  },
+  deleteButtonContainer: {
+    paddingLeft: 8,
+    justifyContent: 'center',
+  },
+  subtleDeleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

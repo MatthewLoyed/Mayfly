@@ -31,6 +31,7 @@ const MAPPING = {
   'plus.circle': 'add-circle',
   'checkmark': 'check',
   'ellipsis.circle': 'more-horiz',
+  'xmark': 'close',
 } as IconMapping;
 
 /**
