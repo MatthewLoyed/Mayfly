@@ -19,10 +19,11 @@ Mayfly is a zen-inspired habit tracker and productivity app designed to make eve
    npm install
    ```
 
-2. **Start the App**
+2. **Start the App (Recommended for Phone Connectivity)**
    ```bash
-   npx expo start
+   npm run start:tunnel
    ```
+   This command starts the project with an **Expo tunnel**, allowing you to scan the QR code with your phone (Expo Go app) even if you aren't on the same network.
 
 3. **Platforms**
    - Press **i** for iOS Simulator.

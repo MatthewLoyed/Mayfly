@@ -1,38 +1,53 @@
-import { AddHabitForm } from '@/components/habits/AddHabitForm';
-import { ButterflyHabit } from '@/components/habits/ButterflyHabit';
-import { HoldToComplete } from '@/components/habits/HoldToComplete';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { initDatabase } from '@/services/database';
-import { completeHabit, createHabit, getAllHabits } from '@/services/habit-service';
-import { type Habit } from '@/types/habit';
-import { Image } from 'expo-image';
-import React, { useEffect, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AddHabitForm } from "@/components/habits/AddHabitForm";
+import { ButterflyHabit } from "@/components/habits/ButterflyHabit";
+import { ThemedText } from "@/components/themed-text";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { HapticType, TactileButton } from "@/components/ui/TactileButton";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { initDatabase } from "@/services/database";
+import {
+  completeHabit,
+  createHabit,
+  deleteHabit,
+  getAllHabits,
+} from "@/services/habit-service";
+import { type Habit } from "@/types/habit";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 /**
- * Butterfly Garden - Habit tracking with metamorphosis theme
- * Each habit progresses through: Egg → Caterpillar → Chrysalis → Butterfly
+ * Butterfly Garden - Habit tracking with Streaks-like theme
  */
-const HABITS_PER_PAGE = 6; // 3 rows × 2 columns
-const ROWS = 3;
-const COLUMNS = 2;
-const PADDING = 16;
-const CIRCLE_SPACING = 16; // Space between circles
+const PADDING = 20;
+const GAP = 16;
+const ITEM_SIZE = 130;
 
 export default function GardenScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // Edit mode state
   const [currentPage, setCurrentPage] = useState(0);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'dark'];
+  const colors = Colors[colorScheme ?? "dark"];
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const scrollViewRef = React.useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -45,7 +60,7 @@ export default function GardenScreen() {
       const allHabits = await getAllHabits();
       setHabits(allHabits);
     } catch (error) {
-      console.error('Error loading habits:', error);
+      console.error("Error loading habits:", error);
     } finally {
       setIsLoading(false);
     }
@@ -56,196 +71,183 @@ export default function GardenScreen() {
       await completeHabit(habitId);
       await loadHabits(); // Reload to update streaks
     } catch (error) {
-      console.error('Error completing habit:', error);
+      console.error("Error completing habit:", error);
     }
+  };
+
+  const handleDeleteHabit = (habitId: string) => {
+    Alert.alert(
+      "Delete Habit",
+      "Are you sure you want to remove this habit? This cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteHabit(habitId);
+              await loadHabits();
+            } catch (error) {
+              console.error("Error deleting habit:", error);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleAddHabit = async (name: string, icon?: string) => {
     try {
       const newHabit = await createHabit(name, undefined, icon);
-      const previousHabitCount = habits.length;
       setHabits((prev) => [...prev, newHabit]);
       setIsAdding(false);
       await loadHabits();
 
-      // Auto-scroll to new page if habit starts a new page
-      const newHabitCount = previousHabitCount + 1;
-      if (newHabitCount > HABITS_PER_PAGE) {
-        const newPageIndex = Math.floor((newHabitCount - 1) / HABITS_PER_PAGE);
-        // Use setTimeout to ensure the ScrollView has updated with new content
-        setTimeout(() => {
-          const scrollWidth = Math.max(0, width);
-          scrollViewRef.current?.scrollTo({
-            x: newPageIndex * scrollWidth,
-            animated: true,
-          });
-          setCurrentPage(newPageIndex);
-        }, 100);
-      }
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     } catch (error) {
-      console.error('Error creating habit:', error);
+      console.error("Error creating habit:", error);
     }
   };
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <ThemedText>Loading garden...</ThemedText>
       </SafeAreaView>
     );
   }
 
-  // Calculate dynamic sizing for butterfly habits
-  const availableWidth = Math.max(0, width);
-  const availableHeight = Math.max(0, height - (insets.top + insets.bottom));
+  // --- Grid Layout Calculation ---
+  // Simple fluid grid since we have fixed item sizes
+  const numColumns = Math.floor(
+    (width - PADDING * 2 + GAP) / (ITEM_SIZE + GAP),
+  );
 
-  // Reserve space for header
-  const HEADER_HEIGHT = 120;
-  const usableHeight = availableHeight - HEADER_HEIGHT;
+  const habitsPerPage = 6;
+  // User asked for "Garden", let's keep the paging logic but simplify constraints.
 
-  const circleSizeByWidth = (availableWidth - (PADDING * 2) - CIRCLE_SPACING) / COLUMNS;
-  const circleSizeByHeight = (usableHeight - (PADDING * 2) - (CIRCLE_SPACING * (ROWS - 1))) / ROWS;
-  const CIRCLE_SIZE = Math.max(0, Math.min(circleSizeByWidth, circleSizeByHeight));
-
-  const PAGE_HEIGHT = (CIRCLE_SIZE * ROWS) + (CIRCLE_SPACING * (ROWS - 1)) + (PADDING * 2);
-
-  // Group habits into pages of 6
+  // Group habits into pages
   const pages: Habit[][] = [];
-  for (let i = 0; i < habits.length; i += HABITS_PER_PAGE) {
-    pages.push(habits.slice(i, i + HABITS_PER_PAGE));
+  for (let i = 0; i < habits.length; i += habitsPerPage) {
+    pages.push(habits.slice(i, i + habitsPerPage));
   }
+  if (pages.length === 0) pages.push([]);
+
+  const pageWidth = width;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Garden Background Image */}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Background - Optional: keep image or go solid for Streaks look? Let's keep the user's preferred "Garden" bg for now but make it subtle? */}
       <Image
-        source={require('@/assets/images/Garden.jpg')}
+        source={require("@/assets/images/Garden.jpg")}
         style={styles.backgroundImage}
         contentFit="cover"
         priority="high"
       />
-
-      {/* Semi-transparent overlay for better text readability */}
       <View style={styles.overlay} />
 
-      {/* Fixed header */}
       <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>
-          Butterfly Garden
+        <ThemedText type="titleRounded" style={styles.title}>
+          Garden
         </ThemedText>
-        <ThemedText type="subtitle" style={styles.subtitle}>
-          Watch your habits transform!
+        <ThemedText type="subtitleSerif" style={styles.subtitle}>
+          Nurture your habits
         </ThemedText>
       </View>
 
-      {/* Horizontal paginated grid */}
       {habits.length === 0 ? (
-        <ThemedView style={styles.emptyContainer}>
-          <ThemedText type="subtitle" style={styles.emptyText}>
-            No habits yet. Tap + to plant your first seed!
-          </ThemedText>
-        </ThemedView>
-      ) : (
-        <>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            style={styles.gridContainer}
-            contentContainerStyle={styles.gridContentContainer}
-            scrollEnabled={true}
-            directionalLockEnabled={true}
-            alwaysBounceHorizontal={true}
-            bounces={true}
-            decelerationRate="fast"
-            onMomentumScrollEnd={(event) => {
-              const pageIndex = Math.round(event.nativeEvent.contentOffset.x / availableWidth);
-              setCurrentPage(Math.max(0, Math.min(pageIndex, pages.length - 1)));
-            }}
-            onScroll={(event) => {
-              // Update during scroll for more responsive indicators
-              const pageIndex = Math.round(event.nativeEvent.contentOffset.x / availableWidth);
-              const clampedPage = Math.max(0, Math.min(pageIndex, pages.length - 1));
-              if (clampedPage !== currentPage) {
-                setCurrentPage(clampedPage);
-              }
-            }}
-            scrollEventThrottle={16}
+        <View style={styles.centerContainer}>
+          <TactileButton
+            onPress={() => setIsAdding(true)}
+            style={styles.emptyContainer}
+            hapticType={HapticType.ImpactMedium}
           >
-            {pages.map((pageHabits, pageIndex) => (
-              <View
-                key={pageIndex}
-                style={[styles.page, { width: availableWidth, height: PAGE_HEIGHT }]}
-              >
-                <View style={[styles.grid, { width: (CIRCLE_SIZE * COLUMNS) + (CIRCLE_SPACING * (COLUMNS - 1)) }]}>
-                  {pageHabits.map((habit, habitIndex) => {
-                    // Calculate row and column position
-                    const row = Math.floor(habitIndex / COLUMNS);
-                    const col = habitIndex % COLUMNS;
-
-                    return (
-                      <View
-                        key={habit.id}
-                        style={[
-                          styles.habitWrapper,
-                          {
-                            width: CIRCLE_SIZE,
-                            height: CIRCLE_SIZE,
-                            marginRight: col === 0 ? CIRCLE_SPACING : 0,
-                            marginBottom: row < ROWS - 1 ? CIRCLE_SPACING : 0,
-                          },
-                        ]}
-                      >
-                        <HoldToComplete
-                          onComplete={() => handleCompleteHabit(habit.id)}
-                          duration={800}
-                        >
-                          {({ isHolding, progress }) => (
-                            <ButterflyHabit
-                              habit={habit}
-                              isHolding={isHolding}
-                              progress={progress}
-                              size={CIRCLE_SIZE}
-                            />
-                          )}
-                        </HoldToComplete>
-                      </View>
-                    );
-                  })}
-                </View>
+            <IconSymbol name="plus.circle" size={64} color="#FFF" />
+            <ThemedText type="subtitle" style={styles.emptyText}>
+              Add a task
+            </ThemedText>
+          </TactileButton>
+        </View>
+      ) : (
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.scrollView}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]}
+          onMomentumScrollEnd={(e) => {
+            const page = Math.round(e.nativeEvent.contentOffset.x / width);
+            setCurrentPage(page);
+          }}
+        >
+          {pages.map((pageHabits, pageIndex) => (
+            <View
+              key={pageIndex}
+              style={[styles.pageContainer, { width: pageWidth }]}
+            >
+              <View style={styles.grid}>
+                {pageHabits.map((habit) => (
+                  <Animated.View
+                    key={habit.id}
+                    style={styles.gridItem}
+                    layout={LinearTransition}
+                  >
+                    <ButterflyHabit
+                      habit={habit}
+                      onComplete={() => handleCompleteHabit(habit.id)}
+                      onDelete={() => handleDeleteHabit(habit.id)}
+                      isEditing={isEditing}
+                      size={ITEM_SIZE}
+                    />
+                  </Animated.View>
+                ))}
+                {/* Add dummy items to balance partial rows if needed, or justify-content start */}
               </View>
-            ))}
-          </ScrollView>
-
-          {/* Page indicators */}
-          {pages.length > 1 && (
-            <View style={styles.pageIndicatorContainer}>
-              {pages.map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.pageIndicator,
-                    index === currentPage && styles.pageIndicatorActive,
-                  ]}
-                />
-              ))}
             </View>
-          )}
-        </>
+          ))}
+        </ScrollView>
       )}
 
-      {/* Floating add button */}
-      <TouchableOpacity
+      {/* Footer Controls */}
+      <View style={styles.footer}>
+        {pages.length > 1 && (
+          <View style={styles.indicators}>
+            {pages.map((_, i) => (
+              <View
+                key={i}
+                style={[styles.dot, i === currentPage && styles.activeDot]}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+
+      <TactileButton
         style={[styles.fab, { backgroundColor: colors.primary }]}
         onPress={() => setIsAdding(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Add Habit"
+        hapticType={HapticType.ImpactMedium}
       >
         <IconSymbol name="plus" size={32} color="#FFFFFF" />
-      </TouchableOpacity>
+      </TactileButton>
 
-      {/* Modal overlay for adding habit */}
+      {/* Edit/Settings Button (Bottom Left) */}
+      <TactileButton
+        style={[styles.settingsFab, { backgroundColor: isEditing ? colors.tint : colors.backgroundSubtle }]}
+        onPress={() => setIsEditing(!isEditing)}
+        hapticType={HapticType.ImpactMedium}
+      >
+        <IconSymbol name={isEditing ? "checkmark" : "ellipsis.circle"} size={28} color={isEditing ? "#FFF" : colors.text} />
+      </TactileButton>
+
       <Modal
         visible={isAdding}
         transparent
@@ -254,8 +256,14 @@ export default function GardenScreen() {
       >
         <TouchableWithoutFeedback onPress={() => setIsAdding(false)}>
           <View style={styles.modalBackdrop}>
-            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-              <AddHabitForm onSubmit={handleAddHabit} onCancel={() => setIsAdding(false)} />
+            <View
+              style={styles.modalContent}
+              onStartShouldSetResponder={() => true}
+            >
+              <AddHabitForm
+                onSubmit={handleAddHabit}
+                onCancel={() => setIsAdding(false)}
+              />
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -270,131 +278,135 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
+    opacity: 0.8, // Darken it a bit more for contrast
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)', // Subtle dark overlay for text readability
+    backgroundColor: "rgba(0,0,0,0.4)", // Darker overlay for 'Premium' feel
   },
   header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 10,
-    zIndex: 10,
-  },
-  gridContainer: {
-    flex: 1,
-    marginTop: 120, // Space for header
-  },
-  gridContentContainer: {
-    // No padding needed - each page handles its own layout
-  },
-  page: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    padding: PADDING,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-  },
-  habitWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: 80, // Reduced from 100
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 0,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '800',
-    marginBottom: 8,
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
+    color: "white",
+    fontSize: 24, // Slightly smaller
+    fontWeight: "bold",
+    textShadowColor: "rgba(0,0,0,0.5)",
     textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 12, // Slightly smaller
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
-  garden: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    gap: 20,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    // Content layout
+  },
+  pageContainer: {
+    flex: 1,
+    paddingHorizontal: PADDING,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
+    alignContent: "flex-start",
+    gap: GAP,
+    marginTop: 10, // Reduced from 20
+  },
+  gridItem: {
+    marginBottom: 10, // Reduced from GAP (20)
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginTop: 120,
+    padding: 32,
+    borderRadius: 60,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.3)",
+    borderStyle: "dashed",
   },
   emptyText: {
-    textAlign: 'center',
-    color: '#FFFFFF',
-    opacity: 0.9,
+    color: "white",
     fontSize: 16,
+    marginTop: 12,
+    fontWeight: "600",
   },
-  fab: {
-    position: 'absolute',
-    right: 16,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  pageIndicatorContainer: {
-    position: 'absolute',
-    bottom: 80, // Above the FAB button
+  footer: {
+    position: 'absolute', // Position absolute to keep it at the very bottom
+    bottom: 20,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    zIndex: 10,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  pageIndicator: {
+  indicators: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: "rgba(255,255,255,0.4)",
   },
-  pageIndicatorActive: {
+  activeDot: {
+    backgroundColor: "white",
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  },
+  fab: {
+    position: "absolute",
+    right: 24,
+    bottom: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  settingsFab: {
+    position: 'absolute',
+    left: 24,
+    bottom: 32,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)", // Darker dim
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 400,
   },
 });
-

@@ -16,45 +16,83 @@ const streakDark = '#FFC048'; // Brighter yellow for dark mode
 const warningLight = '#E17055'; // Soft coral
 const warningDark = '#FF7675'; // Brighter coral for dark mode
 
-const tintColorLight = primaryLight;
-const tintColorDark = primaryDark;
+// Serene Botanical Color Palette
+const forestCharcoal = '#1A1C1A';
+const organicSurface = '#252825';
+const sageGrowth = '#9CAF88';
+const lavenderMist = '#B5A8D6';
+const sunsetGold = '#E6B874';
+const riverStone = '#3A3D3A';
+const morningMist = '#E8E8E8';
+const stoneGrey = '#A0A0A0';
+
+const tintColorLight = sageGrowth;
+const tintColorDark = sageGrowth;
 
 export const Colors = {
   light: {
-    text: '#2D3436',
-    background: '#FFFFFF',
+    text: morningMist,
+    background: forestCharcoal,
     tint: tintColorLight,
-    icon: '#636E72',
-    tabIconDefault: '#B2BEC3',
+    icon: stoneGrey,
+    tabIconDefault: riverStone,
     tabIconSelected: tintColorLight,
     // Habit-specific colors
-    habitComplete: successLight,
-    habitIncomplete: '#DFE6E9',
-    habitStroke: '#B2BEC3',
-    streak: streakLight,
-    primary: primaryLight,
-    secondary: '#A29BFE',
-    accent: successLight,
-    warning: warningLight,
-    backgroundSubtle: '#F8F9FA',
+    habitComplete: sageGrowth,
+    habitIncomplete: riverStone,
+    habitStroke: stoneGrey,
+    streak: sunsetGold,
+    primary: sageGrowth,
+    secondary: lavenderMist,
+    accent: sunsetGold,
+    warning: '#D48D78', // Soft terracota
+    backgroundSubtle: organicSurface,
+    // Design System Specifics
+    cardBackground: organicSurface,
+    textSecondary: stoneGrey,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#1A1A1A',
+    text: morningMist,
+    background: forestCharcoal,
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#636E72',
+    icon: stoneGrey,
+    tabIconDefault: riverStone,
     tabIconSelected: tintColorDark,
     // Dark mode habit colors
-    habitComplete: successDark,
-    habitIncomplete: '#2D3436',
-    habitStroke: '#636E72',
-    streak: streakDark,
-    primary: primaryDark,
-    secondary: primaryLight,
-    accent: successDark,
-    warning: warningDark,
-    backgroundSubtle: '#242424',
+    habitComplete: sageGrowth,
+    habitIncomplete: riverStone,
+    habitStroke: stoneGrey,
+    streak: sunsetGold,
+    primary: sageGrowth,
+    secondary: lavenderMist,
+    accent: sunsetGold,
+    warning: '#D48D78',
+    backgroundSubtle: organicSurface,
+    // Design System Specifics
+    cardBackground: organicSurface,
+    textSecondary: stoneGrey,
+  },
+};
+
+export const Layout = {
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
+  },
+  borderRadius: {
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 24,
+  },
+  screen: {
+    small: 375, // iPhone SE width
+    medium: 414, // iPhone Plus width
+    large: 768, // iPad width
   },
 };
 

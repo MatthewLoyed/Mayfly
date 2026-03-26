@@ -2,7 +2,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { type Todo } from '@/types/todo';
 import React, { useMemo, useState } from 'react';
-import { Dimensions, Modal, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Dimensions, Modal, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { HapticType, TactileButton } from '../ui/TactileButton';
+import Animated, { LinearTransition, FadeIn } from 'react-native-reanimated';
 
 interface TodoDetailsModalProps {
   visible: boolean;
@@ -35,74 +37,95 @@ export function TodoDetailsModal({ visible, todo, onClose, onSave }: TodoDetails
           <View style={StyleSheet.absoluteFill} />
         </TouchableWithoutFeedback>
         <ThemedView style={styles.sheet}>
-          <ThemedText type="title" style={styles.title}>
-            Todo Details
-          </ThemedText>
+          <Animated.View layout={LinearTransition} entering={FadeIn.delay(100)}>
+            <ThemedText type="title" style={styles.title}>
+              Todo Details
+            </ThemedText>
 
-          {todo && (
-            <ThemedText style={styles.subtitle}>{todo.text}</ThemedText>
-          )}
+            {todo && (
+              <ThemedText style={styles.subtitle}>{todo.text}</ThemedText>
+            )}
 
-          {/* Estimated time quick selectors */}
-          <View style={styles.section}>
-            <ThemedText type="defaultSemiBold">Estimated time</ThemedText>
-            <View style={styles.choicesRow}>
-              {[5, 15, 30, 60, 90].map((m) => (
-                <TouchableOpacity
-                  key={m}
-                  style={[styles.choice, estimated === m && styles.choiceSelected]}
-                  onPress={() => setEstimated(m)}
+            {/* Estimated time quick selectors */}
+            <View style={styles.section}>
+              <ThemedText type="defaultSemiBold">Estimated time</ThemedText>
+              <View style={styles.choicesRow}>
+                {[5, 15, 30, 60, 90].map((m) => (
+                  <TactileButton
+                    key={m}
+                    style={[styles.choice, estimated === m && styles.choiceSelected]}
+                    onPress={() => setEstimated(m)}
+                    hapticType={HapticType.Selection}
+                  >
+                    <ThemedText>{m}m</ThemedText>
+                  </TactileButton>
+                ))}
+                <TactileButton 
+                  style={styles.choice} 
+                  onPress={() => setEstimated(null)}
+                  hapticType={HapticType.Selection}
                 >
-                  <ThemedText>{m}m</ThemedText>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity style={styles.choice} onPress={() => setEstimated(null)}>
-                <ThemedText>None</ThemedText>
-              </TouchableOpacity>
+                  <ThemedText>None</ThemedText>
+                </TactileButton>
+              </View>
+              <View style={styles.currentRow}>
+                <ThemedText>Current:</ThemedText>
+                <ThemedText style={[styles.currentValue, estimateColor ? { color: estimateColor } : null]}>
+                  {estimated != null ? `${estimated} minutes` : 'Not set'}
+                </ThemedText>
+              </View>
             </View>
-            <View style={styles.currentRow}>
-              <ThemedText>Current:</ThemedText>
-              <ThemedText style={[styles.currentValue, estimateColor ? { color: estimateColor } : null]}>
-                {estimated != null ? `${estimated} minutes` : 'Not set'}
-              </ThemedText>
-            </View>
-          </View>
 
-          {/* Reminder (simple ISO text for now) */}
-          <View style={styles.section}>
-            <ThemedText type="defaultSemiBold">Reminder (ISO date/time)</ThemedText>
-            <View style={styles.choicesRow}>
-              <TouchableOpacity style={styles.choice} onPress={() => setDueAt(new Date().toISOString())}>
-                <ThemedText>Now</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.choice} onPress={() => setDueAt(null)}>
-                <ThemedText>Clear</ThemedText>
-              </TouchableOpacity>
+            {/* Reminder (simple ISO text for now) */}
+            <View style={styles.section}>
+              <ThemedText type="defaultSemiBold">Reminder (ISO date/time)</ThemedText>
+              <View style={styles.choicesRow}>
+                <TactileButton 
+                  style={styles.choice} 
+                  onPress={() => setDueAt(new Date().toISOString())}
+                  hapticType={HapticType.Selection}
+                >
+                  <ThemedText>Now</ThemedText>
+                </TactileButton>
+                <TactileButton 
+                  style={styles.choice} 
+                  onPress={() => setDueAt(null)}
+                  hapticType={HapticType.Selection}
+                >
+                  <ThemedText>Clear</ThemedText>
+                </TactileButton>
+              </View>
+              <View style={styles.currentRow}>
+                <ThemedText>Current:</ThemedText>
+                <ThemedText style={styles.currentValue}>
+                  {dueAt ?? 'Not set'}
+                </ThemedText>
+              </View>
             </View>
-            <View style={styles.currentRow}>
-              <ThemedText>Current:</ThemedText>
-              <ThemedText style={styles.currentValue}>
-                {dueAt ?? 'Not set'}
-              </ThemedText>
-            </View>
-          </View>
 
-          <View style={styles.footerRow}>
-            <TouchableOpacity style={styles.footerBtn} onPress={onClose}>
-              <ThemedText>Cancel</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.footerBtn}
-              onPress={() => onSave({ dueAt, estimatedMinutes: estimated })}
-            >
-              <ThemedText>Save</ThemedText>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.footerRow}>
+              <TactileButton 
+                style={styles.footerBtn} 
+                onPress={onClose}
+                hapticType={HapticType.Selection}
+              >
+                <ThemedText>Cancel</ThemedText>
+              </TactileButton>
+              <TactileButton
+                style={styles.footerBtn}
+                onPress={() => onSave({ dueAt, estimatedMinutes: estimated })}
+                hapticType={HapticType.ImpactMedium}
+              >
+                <ThemedText style={{ fontWeight: '600' }}>Save</ThemedText>
+              </TactileButton>
+            </View>
+          </Animated.View>
         </ThemedView>
       </View>
     </Modal>
   );
 }
+
 
 const styles = StyleSheet.create({
   backdrop: {

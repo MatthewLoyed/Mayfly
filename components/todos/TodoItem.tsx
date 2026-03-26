@@ -1,149 +1,283 @@
-import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { type Todo } from '@/types/todo';
-import { format } from 'date-fns';
-import * as Haptics from 'expo-haptics';
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ThemedText } from "@/components/themed-text";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { type Todo } from "@/types/todo";
+import { format } from "date-fns";
+import * as Haptics from "expo-haptics";
+import React, { useEffect } from "react";
+import {
+  Pressable,
+  Animated as RNAnimated,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 
 interface TodoItemProps {
   todo: Todo;
   onToggle: () => void;
   onPress?: () => void;
   onLongPress?: () => void;
-  isActive?: boolean;
   onStartDrag?: () => void;
   onDelete?: () => void;
+  drag?: () => void;
+  isActive?: boolean;
 }
 
 /**
  * Individual todo item with circular checkbox
  */
-export function TodoItem({ todo, onToggle, onPress, onLongPress, isActive, onStartDrag, onDelete }: TodoItemProps) {
+export function TodoItem({
+  todo,
+  onToggle,
+  onPress,
+  onLongPress,
+  isActive,
+  drag,
+  onDelete,
+}: TodoItemProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
+
+  const scale = useSharedValue(todo.completed ? 1 : 0);
+  const containerOpacity = useSharedValue(todo.completed ? 0.5 : 1);
+  const containerScale = useSharedValue(isActive ? 1.02 : 1);
+  const checkboxScale = useSharedValue(1);
+  const textScale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withSpring(todo.completed ? 1 : 0, {
+      mass: 0.5,
+      stiffness: 150,
+      damping: 15,
+    });
+    containerOpacity.value = withTiming(todo.completed ? 0.5 : 1, {
+      duration: 200,
+    });
+  }, [todo.completed]);
+
+  useEffect(() => {
+    containerScale.value = withSpring(isActive ? 1.02 : 1, {
+      stiffness: 500,
+      damping: 30,
+      mass: 0.2,
+    });
+  }, [isActive]);
+
+  const animatedCheckmarkStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+      opacity: scale.value,
+    };
+  });
+
+  const containerAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: containerOpacity.value,
+      transform: [{ scale: containerScale.value }],
+    };
+  });
+
+  const checkboxAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: checkboxScale.value }],
+  }));
+
+  const textAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: textScale.value }],
+  }));
 
   const handleToggle = async () => {
-    // Light haptic on toggle (iOS only)
-    if (process.env.EXPO_OS === 'ios') {
+    // Standardize haptics based on project rules
+    try {
       if (todo.completed) {
+        // Unmarking - light tap
         await Haptics.selectionAsync();
       } else {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        // Completing - impact medium
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
-    }
+    } catch (e) {}
     onToggle();
   };
 
-  return (
-    <View
-      style={[
-        styles.container,
-        todo.priority && styles.priorityContainer,
-        isActive && styles.activeContainer,
-        todo.completed && styles.completedContainer,
-      ]}
-    >
-      <View style={styles.content}>
-        {/* Circular checkbox */}
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={todo.completed ? 'Mark as not completed' : 'Mark as completed'}
-          onPress={handleToggle}
-          activeOpacity={0.7}
+  const handleDelete = async () => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (e) {}
+    if (onDelete) onDelete();
+  };
+
+  const renderRightActions = (
+    progress: RNAnimated.AnimatedInterpolation<number>,
+    dragX: RNAnimated.AnimatedInterpolation<number>,
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [-80, 0],
+      outputRange: [1, 0],
+      extrapolate: "clamp",
+    });
+
+    return (
+      <View style={styles.deleteActionContainer}>
+        <RNAnimated.View
+          style={[styles.deleteAction, { transform: [{ scale }] }]}
         >
-          <View
-            style={[
-              styles.checkbox,
-              {
-                backgroundColor: todo.completed ? colors.habitComplete : 'transparent',
-                borderColor: todo.completed ? colors.habitComplete : colors.habitStroke,
-              },
-            ]}
+          <TouchableOpacity
+            onPress={handleDelete}
+            style={styles.deleteActionButton}
           >
-            {todo.completed && (
-              <ThemedText style={styles.checkmark} lightColor="#FFFFFF" darkColor="#FFFFFF">
-                ✓
-              </ThemedText>
-            )}
-          </View>
-        </TouchableOpacity>
+            <IconSymbol name="trash" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </RNAnimated.View>
+      </View>
+    );
+  };
 
-        {/* Todo text */}
-        <TouchableOpacity style={styles.textContainer} onPress={onPress} activeOpacity={0.7}>
-          <ThemedText
-            style={[
-              styles.text,
-              todo.completed && styles.completedText,
-              todo.priority && styles.priorityText,
-            ]}
-            numberOfLines={2}
+
+  return (
+    <Swipeable
+      renderRightActions={onDelete ? renderRightActions : undefined}
+      friction={1}
+      overshootRight={false}
+      activeOffsetX={[-10, 10]}
+      failOffsetY={[-5, 5]}
+      enableTrackpadTwoFingerGesture
+    >
+      <Animated.View
+        style={[
+          styles.container,
+          todo.priority && styles.priorityContainer,
+          containerAnimatedStyle,
+        ]}
+      >
+        <View style={styles.content}>
+          {/* Circular checkbox */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              todo.completed ? "Mark as not completed" : "Mark as completed"
+            }
+            onPress={handleToggle}
+            onPressIn={() => {
+              checkboxScale.value = withSpring(0.92);
+              Haptics.selectionAsync();
+            }}
+            onPressOut={() => {
+              checkboxScale.value = withSpring(1);
+            }}
           >
-            {todo.text}
-          </ThemedText>
-
-          {(todo.dueAt || todo.estimatedMinutes != null) && (
-            <View style={styles.metaRow}>
-              {todo.dueAt && (
-                <View style={styles.metaPill}>
-                  <ThemedText style={styles.metaPillText}>
-                    {format(new Date(todo.dueAt), 'p')}
-                  </ThemedText>
-                </View>
-              )}
-              {typeof todo.estimatedMinutes === 'number' && (
-                <View
+            <Animated.View
+              style={[
+                styles.checkbox,
+                checkboxAnimatedStyle,
+                {
+                  backgroundColor: todo.completed
+                    ? colors.habitComplete
+                    : "transparent",
+                  borderColor: todo.completed
+                    ? colors.habitComplete
+                    : colors.habitStroke,
+                },
+              ]}
+            >
+              {todo.completed && (
+                <Animated.Text
                   style={[
-                    styles.metaPill,
-                    (todo.estimatedMinutes <= 5 && styles.metaGreen) ||
-                    (todo.estimatedMinutes > 60 && styles.metaRed) ||
-                    (todo.estimatedMinutes >= 15 && todo.estimatedMinutes <= 60 && styles.metaOrange) ||
-                    null,
+                    styles.checkmark,
+                    { color: "#FFFFFF" },
+                    animatedCheckmarkStyle,
                   ]}
                 >
-                  <ThemedText style={styles.metaPillText}>
-                    {todo.estimatedMinutes}m
-                  </ThemedText>
+                  ✓
+                </Animated.Text>
+              )}
+            </Animated.View>
+          </Pressable>
+
+          <Pressable
+            style={styles.textContainer}
+            onPress={onPress}
+            onLongPress={drag}
+            delayLongPress={250}
+            onPressIn={() => {
+              textScale.value = withSpring(0.98);
+            }}
+            onPressOut={() => {
+              textScale.value = withSpring(1);
+            }}
+          >
+            <Animated.View style={textAnimatedStyle}>
+              <ThemedText
+                style={[
+                  styles.text,
+                  todo.completed && styles.completedText,
+                  todo.priority && styles.priorityText,
+                ]}
+                numberOfLines={2}
+              >
+                {todo.text}
+              </ThemedText>
+
+              {(todo.dueAt || todo.estimatedMinutes != null) && (
+                <View style={styles.metaRow}>
+                  {todo.dueAt && (
+                    <View style={styles.metaPill}>
+                      <ThemedText style={styles.metaPillText}>
+                        {format(new Date(todo.dueAt), "p")}
+                      </ThemedText>
+                    </View>
+                  )}
+                  {typeof todo.estimatedMinutes === "number" && (
+                    <View
+                      style={[
+                        styles.metaPill,
+                        (todo.estimatedMinutes <= 5 && styles.metaGreen) ||
+                        (todo.estimatedMinutes > 60 && styles.metaRed) ||
+                        (todo.estimatedMinutes >= 15 &&
+                          todo.estimatedMinutes <= 60 &&
+                          styles.metaOrange) ||
+                        null,
+                      ]}
+                    >
+                      <ThemedText style={styles.metaPillText}>
+                        {todo.estimatedMinutes}m
+                      </ThemedText>
+                    </View>
+                  )}
                 </View>
               )}
+            </Animated.View>
+          </Pressable>
+
+          {/* Priority indicator */}
+          {todo.priority && !todo.completed && (
+            <View
+              style={[
+                styles.priorityBadge,
+                { backgroundColor: colors.primary },
+              ]}
+            >
+              <ThemedText
+                style={styles.priorityBadgeText}
+                lightColor="#FFFFFF"
+                darkColor="#FFFFFF"
+              >
+                !
+              </ThemedText>
             </View>
           )}
-        </TouchableOpacity>
 
-        {/* Priority indicator */}
-        {todo.priority && !todo.completed && (
-          <View style={[styles.priorityBadge, { backgroundColor: colors.primary }]}>
-            <ThemedText style={styles.priorityBadgeText} lightColor="#FFFFFF" darkColor="#FFFFFF">
-              !
-            </ThemedText>
-          </View>
-        )}
-        {/* Drag handle */}
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Reorder"
-          onPressIn={onStartDrag}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.dragHandle}
-        >
-          <ThemedText style={styles.dragHandleIcon}>≡</ThemedText>
-        </TouchableOpacity>
-
-        {/* Delete button (only for completed items) */}
-        {todo.completed && (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Delete Todo"
-            onPress={onDelete}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.deleteButton}
-          >
-            <ThemedText style={styles.deleteButtonText}>✕</ThemedText>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View >
+        </View>
+      </Animated.View>
+    </Swipeable>
   );
 }
 
@@ -153,33 +287,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginVertical: 4,
     borderRadius: 12,
+    backgroundColor: "transparent",
   },
   priorityContainer: {
-    backgroundColor: 'rgba(108, 92, 231, 0.1)', // Light purple background
+    backgroundColor: "rgba(108, 92, 231, 0.1)", // Light purple background
   },
   activeContainer: {
-    opacity: 0.8,
-    transform: [{ scale: 1.02 }],
+    elevation: 4,
+    backgroundColor: "#2D3436", // Explicit background for dragged item
   },
   completedContainer: {
-    opacity: 0.5,
+    // Opacity handled by animated style
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   checkmark: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   textContainer: {
     flex: 1,
@@ -189,42 +324,34 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   completedText: {
-    textDecorationLine: 'line-through',
+    textDecorationLine: "line-through",
     opacity: 0.6,
   },
   priorityText: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
   priorityBadge: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginLeft: 8,
   },
   priorityBadgeText: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
-  dragHandle: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    marginLeft: 6,
-  },
-  dragHandleIcon: {
-    fontSize: 16,
-    opacity: 0.6,
-  },
+
   metaRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginTop: 6,
-    alignItems: 'center',
+    alignItems: "center",
   },
   metaPill: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
     paddingVertical: 2,
     paddingHorizontal: 6,
@@ -233,24 +360,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   metaGreen: {
-    borderColor: '#2ecc71',
+    borderColor: "#2ecc71",
   },
   metaOrange: {
-    borderColor: '#f39c12',
+    borderColor: "#f39c12",
   },
   metaRed: {
-    borderColor: '#e74c3c',
+    borderColor: "#e74c3c",
   },
-  deleteButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    marginLeft: 4,
+  deleteActionContainer: {
+    marginVertical: 4,
+    justifyContent: "center",
+    alignItems: "flex-end",
+    width: 80,
+    backgroundColor: "#ff4757",
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
   },
-  deleteButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#e74c3c', // Red color for delete
-    opacity: 0.8,
+  deleteAction: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+  },
+  deleteActionButton: {
+    padding: 16,
   },
 });
-

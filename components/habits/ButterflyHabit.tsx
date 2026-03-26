@@ -1,290 +1,303 @@
-import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { type Habit } from '@/types/habit';
-import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { HabitStatsCard } from "@/components/habits/HabitStatsCard";
+import { HoldToComplete } from "@/components/habits/HoldToComplete";
+import { ThemedText } from "@/components/themed-text";
+import { CircularProgress } from "@/components/ui/CircularProgress";
+import { HapticType, TactileButton } from "@/components/ui/TactileButton";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { type Habit } from "@/types/habit";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import * as Haptics from "expo-haptics";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
+  FadeIn,
+  FadeOut,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 interface ButterflyHabitProps {
   habit: Habit;
-  isHolding?: boolean;
-  progress?: number; // 0-1 for hold progress
-  onPress?: () => void;
-  size?: number; // Size of the habit circle
+  onComplete: (id: string) => void;
+  onDelete?: (id: string) => void;
+  isEditing?: boolean;
+  size?: number;
 }
 
-/**
- * Butterfly lifecycle stages based on streak:
- * - Stage 1 (0-2 days): Egg 🥚
- * - Stage 2 (3-6 days): Caterpillar 🐛
- * - Stage 3 (7-13 days): Chrysalis 🟢
- * - Stage 4 (14+ days): Butterfly 🦋
- */
-function getButterflyStage(streak: number): {
-  stage: number;
-  emoji: string;
-  label: string;
-  color: string;
-} {
-  if (streak === 0) {
-    return { stage: 0, emoji: '🌱', label: 'Seed', color: '#8B7355' };
-  } else if (streak <= 2) {
-    return { stage: 1, emoji: '🥚', label: 'Egg', color: '#E8D5B7' };
-  } else if (streak <= 6) {
-    return { stage: 2, emoji: '🐛', label: 'Caterpillar', color: '#7CB342' };
-  } else if (streak <= 13) {
-    return { stage: 3, emoji: '🟢', label: 'Chrysalis', color: '#4CAF50' };
-  } else {
-    // Stage 4+: Butterfly - different colors based on streak milestones
-    if (streak >= 30) {
-      return { stage: 4, emoji: '🦋', label: 'Rare Butterfly', color: '#9C27B0' };
-    } else if (streak >= 21) {
-      return { stage: 4, emoji: '🦋', label: 'Beautiful Butterfly', color: '#FF9800' };
-    } else {
-      return { stage: 4, emoji: '🦋', label: 'Butterfly', color: '#2196F3' };
-    }
-  }
-}
-
-export function ButterflyHabit({ habit, isHolding = false, progress = 0, onPress, size: propSize }: ButterflyHabitProps) {
+export function ButterflyHabit({
+  habit,
+  onComplete,
+  onDelete,
+  isEditing,
+  size: propSize,
+}: ButterflyHabitProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'dark'];
+  const colors = Colors[colorScheme ?? "dark"];
   const isComplete = habit.completedToday;
-  
-  const stage = getButterflyStage(habit.streak);
+
+  // Use the habit's assigned color, or fallback to tint
   const habitColor = habit.color || colors.tint;
-  
-  const size = propSize || 140; // Default size if not provided
+
+  // Default fixed size for the circle
+  const size = propSize || 100;
+  const strokeWidth = 12; // Much thicker for premium visibility
+
   const scaleValue = useSharedValue(1);
-  const progressValue = useSharedValue(0);
-  const flutterValue = useSharedValue(0);
+  const flipValue = useSharedValue(0); // 0 = Front, 1 = Back
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  // We need a stable complete progress value for when it's finished
+  const completionProgress = useSharedValue(1);
 
   // Animate scale on completion
   React.useEffect(() => {
     if (isComplete) {
-      scaleValue.value = withSpring(1.15, { damping: 10 }, () => {
+      scaleValue.value = withSpring(1.1, { damping: 10 }, () => {
         scaleValue.value = withSpring(1, { damping: 10 });
       });
     }
   }, [isComplete]);
 
-  // Animate progress ring
-  React.useEffect(() => {
-    progressValue.value = withTiming(progress, { duration: 100 });
-  }, [progress]);
+  const toggleFlip = () => {
+    const newVal = isFlipped ? 0 : 1;
+    setIsFlipped(!isFlipped);
+    flipValue.value = withTiming(newVal, { duration: 300 });
+    // Rule 2: light tap for selection change (front/back)
+    Haptics.selectionAsync();
+  };
 
-  // Gentle flutter animation for butterflies
-  React.useEffect(() => {
-    if (stage.stage === 4 && !isHolding) {
-      // Continuous gentle flutter loop
-      const startFlutter = () => {
-        flutterValue.value = withTiming(1, { duration: 2000 }, () => {
-          flutterValue.value = withTiming(0, { duration: 2000 }, () => {
-            startFlutter(); // Loop
-          });
-        });
-      };
-      startFlutter();
-    } else {
-      // Reset flutter when not a butterfly or when holding
-      flutterValue.value = withTiming(0, { duration: 200 });
-    }
-  }, [stage.stage, isHolding]);
-
-  const containerStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scaleValue.value },
-      { 
-        translateY: stage.stage === 4 
-          ? interpolate(flutterValue.value, [0, 1], [0, -3])
-          : 0 
-      },
-    ],
-  }));
-
-  const progressStyle = useAnimatedStyle(() => {
-    const rotation = interpolate(progressValue.value, [0, 1], [0, 360]);
+  const frontAnimatedStyle = useAnimatedStyle(() => {
+    const rotateY = interpolate(flipValue.value, [0, 1], [0, 180]);
     return {
-      opacity: isHolding && progressValue.value > 0 ? 1 : 0,
-      transform: [{ rotate: `${rotation}deg` }],
+      flex: 1, // Fill the HoldToComplete container
+      transform: [
+        { scale: scaleValue.value },
+        { perspective: 1000 },
+        { rotateY: `${rotateY}deg` },
+      ],
+      backfaceVisibility: "hidden",
     };
   });
 
-  const isCompleted = isComplete;
+  const backAnimatedStyle = useAnimatedStyle(() => {
+    const rotateY = interpolate(flipValue.value, [0, 1], [180, 360]);
+    return {
+      flex: 1, // Fill the Pressable container
+      transform: [
+        { scale: scaleValue.value },
+        { perspective: 1000 },
+        { rotateY: `${rotateY}deg` },
+      ],
+      backfaceVisibility: "hidden",
+    };
+  });
+
+  // Dynamic Background Color for Front
+  const bgStyle = {
+    backgroundColor: isComplete ? habitColor : "rgba(255,255,255,0.1)",
+    borderColor: isComplete ? "#FFFFFF" : "transparent",
+    borderWidth: isComplete ? 3 : 0,
+  };
+
+  const iconColor = "#FFFFFF";
 
   return (
-    <Animated.View style={[styles.container, containerStyle, { width: size, height: size }]}>
-      <Pressable onPress={onPress} style={styles.pressable}>
-        {/* Background circle with gradient effect */}
+    <View style={styles.wrapper}>
+      <View style={{ width: size, height: size }}>
+        {/* Back Face (Stats) - Only interactive when flipped and NOT editing */}
         <View
-          style={[
-            styles.circle,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              backgroundColor: isCompleted 
-                ? habitColor 
-                : colors.backgroundSubtle,
-              borderWidth: 3,
-              borderColor: isCompleted ? habitColor : stage.color,
-              opacity: isCompleted ? 1 : 0.7,
-            },
-          ]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents={isFlipped && !isEditing ? "auto" : "none"}
         >
-          {/* Progress ring for hold gesture */}
-          {isHolding && (
+          <Pressable onPress={toggleFlip} style={{ flex: 1 }}>
             <Animated.View
               style={[
-                styles.progressRing,
-                {
-                  width: size,
-                  height: size,
-                  borderRadius: size / 2,
-                  borderWidth: 4,
-                  borderColor: colors.primary,
-                  borderRightColor: 'transparent',
-                  borderBottomColor: 'transparent',
-                },
-                progressStyle,
+                backAnimatedStyle,
+                { width: size, height: size, opacity: isEditing ? 0.6 : 1 },
               ]}
-            />
-          )}
-
-          {/* Stage emoji/icon */}
-          <View style={styles.stageContainer}>
-            <ThemedText style={[styles.emoji, { fontSize: size * 0.35 }]}>
-              {stage.emoji}
-            </ThemedText>
-            
-            {/* Completion sparkle effect */}
-            {isCompleted && (
-              <View style={styles.sparkle}>
-                <ThemedText style={styles.sparkleText}>✨</ThemedText>
-              </View>
-            )}
-          </View>
-
-          {/* Habit name */}
-          <View style={styles.nameContainer}>
-            {!!habit.icon && (
-              <Ionicons
-                name={habit.icon as any}
-                size={16}
-                color={isCompleted ? '#FFFFFF' : colors.text}
-                style={{ marginBottom: 4 }}
+            >
+              <HabitStatsCard
+                habit={habit}
+                size={size}
+                color={habitColor}
+              // onDelete removed here, handled by parent overlay
               />
-            )}
-            <ThemedText
-              style={[styles.name, { fontSize: size * 0.11 }]}
-              numberOfLines={2}
-              lightColor={isCompleted ? '#FFFFFF' : colors.text}
-              darkColor={isCompleted ? '#FFFFFF' : colors.text}
-            >
-              {habit.name}
-            </ThemedText>
-          </View>
-
-          {/* Stage label and streak */}
-          <View style={styles.footer}>
-            <ThemedText
-              style={[styles.stageLabel, { fontSize: size * 0.08 }]}
-              lightColor={isCompleted ? '#FFFFFF' : stage.color}
-              darkColor={isCompleted ? '#FFFFFF' : stage.color}
-            >
-              {stage.label}
-            </ThemedText>
-            <ThemedText
-              style={[styles.streak, { fontSize: size * 0.09 }]}
-              lightColor={isCompleted ? '#FFFFFF' : colors.text}
-              darkColor={isCompleted ? '#FFFFFF' : colors.text}
-            >
-              {habit.streak} {habit.streak === 1 ? 'day' : 'days'}
-            </ThemedText>
-          </View>
+            </Animated.View>
+          </Pressable>
         </View>
-      </Pressable>
-    </Animated.View>
+
+        {/* Front Face (Icon + Ring) - Only interactive when NOT flipped and NOT editing */}
+        <View
+          style={StyleSheet.absoluteFill}
+          pointerEvents={!isFlipped && !isEditing ? "auto" : "none"}
+        >
+          <HoldToComplete
+            onComplete={() => onComplete(habit.id)}
+            onTap={toggleFlip}
+            duration={800}
+          >
+            {({ progress }) => (
+              <Animated.View
+                style={[
+                  frontAnimatedStyle,
+                  { width: size, height: size, opacity: isEditing ? 0.6 : 1 },
+                ]}
+              >
+                <View style={styles.innerContent}>
+                  {/* Main Circle */}
+                  <View
+                    style={[
+                      styles.circle,
+                      bgStyle,
+                      {
+                        width: size,
+                        height: size,
+                        borderRadius: size / 2,
+                      },
+                    ]}
+                  >
+                    {habit.icon ? (
+                      <Ionicons
+                        name={habit.icon as any}
+                        size={size * 0.5}
+                        color={iconColor}
+                      />
+                    ) : isComplete ? (
+                      <Ionicons
+                        name="checkmark"
+                        size={size * 0.5}
+                        color={iconColor}
+                      />
+                    ) : (
+                      <ThemedText
+                        style={{
+                          fontSize: size * 0.4,
+                          color: iconColor,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {habit.name.charAt(0).toUpperCase()}
+                      </ThemedText>
+                    )}
+                  </View>
+
+                  {/* Progress Ring Overlay */}
+                  <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                    <CircularProgress
+                      size={size}
+                      strokeWidth={strokeWidth}
+                      progress={
+                        isComplete
+                          ? completionProgress
+                          : progress || completionProgress
+                      }
+                      color={isComplete ? "#FFFFFF" : habitColor}
+                    />
+                  </View>
+                </View>
+              </Animated.View>
+            )}
+          </HoldToComplete>
+        </View>
+
+        {/* Edit Mode Overlay - Delete Badge */}
+        {isEditing && onDelete && (
+          <Animated.View
+            style={[styles.deleteBadgeContainer, { width: size, height: size }]}
+            pointerEvents="box-none"
+            entering={FadeIn.springify().damping(12)}
+            exiting={FadeOut.duration(200)}
+          >
+            <TactileButton
+              onPress={() => onDelete(habit.id)}
+              style={styles.deleteBadge}
+              hapticType={HapticType.ImpactMedium}
+            >
+              <Ionicons name="close" size={16} color="#FFF" />
+            </TactileButton>
+          </Animated.View>
+        )}
+      </View>
+
+      {/* Label Below */}
+      <View style={[styles.labelContainer, { width: size + 20 }]}>
+        <View style={styles.namePill}>
+          <ThemedText
+            style={styles.name}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            lightColor="#FFFFFF"
+            darkColor="#FFFFFF"
+          >
+            {habit.name}
+          </ThemedText>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    // Margin removed - handled by parent
+  wrapper: {
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
-  pressable: {
-    width: '100%',
-    height: '100%',
+  innerContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   circle: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  progressRing: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
+  labelContainer: {
+    marginTop: 10,
+    alignItems: "center",
   },
-  stageContainer: {
-    position: 'absolute',
-    top: '20%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emoji: {
-    textAlign: 'center',
-  },
-  sparkle: {
-    position: 'absolute',
-    top: -10,
-    right: -10,
-  },
-  sparkleText: {
-    fontSize: 20,
-  },
-  nameContainer: {
-    position: 'absolute',
-    top: '50%',
-    width: '80%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ translateY: -20 }],
+  namePill: {
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
   },
   name: {
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 12,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stageLabel: {
-    fontWeight: '700',
-    marginBottom: 2,
-    textTransform: 'uppercase',
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  streak: {
-    fontWeight: '600',
-    opacity: 0.9,
+  deleteBadgeContainer: {
+    position: "absolute",
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    zIndex: 100,
+  },
+  deleteBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#FF3B30", // iOS System Red
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: "#FFF",
   },
 });
-

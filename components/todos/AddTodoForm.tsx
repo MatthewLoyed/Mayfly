@@ -2,8 +2,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { HapticType, TactileButton } from '../ui/TactileButton';
 import React, { useState } from 'react';
-import { Keyboard, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Keyboard, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 
 interface AddTodoFormProps {
   onSubmit: (text: string, priority: boolean) => void;
@@ -21,7 +23,6 @@ export function AddTodoForm({ onSubmit, onCancel }: AddTodoFormProps) {
 
   const handleSubmit = () => {
     const trimmed = text.trim();
-    console.log('[AddTodoForm] submit pressed', { textLength: text.length, trimmedLength: trimmed.length, priority });
     if (trimmed) {
       onSubmit(trimmed, priority);
       setText('');
@@ -31,7 +32,7 @@ export function AddTodoForm({ onSubmit, onCancel }: AddTodoFormProps) {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <Animated.View layout={LinearTransition} style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.inputContainer}>
         <TextInput
           style={[
@@ -52,8 +53,8 @@ export function AddTodoForm({ onSubmit, onCancel }: AddTodoFormProps) {
         />
       </View>
 
-      <View style={styles.actions}>
-        <TouchableOpacity
+      <Animated.View layout={LinearTransition} style={styles.actions}>
+        <TactileButton
           style={[
             styles.priorityButton,
             priority && {
@@ -66,6 +67,7 @@ export function AddTodoForm({ onSubmit, onCancel }: AddTodoFormProps) {
             },
           ]}
           onPress={() => setPriority(!priority)}
+          hapticType={HapticType.ImpactMedium}
         >
           <ThemedText
             style={styles.priorityButtonText}
@@ -74,21 +76,27 @@ export function AddTodoForm({ onSubmit, onCancel }: AddTodoFormProps) {
           >
             {priority ? 'Priority ✓' : 'Make Priority'}
           </ThemedText>
-        </TouchableOpacity>
+        </TactileButton>
 
-        <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: colors.primary }]}
+        <TactileButton
+          style={[
+            styles.submitButton,
+            { backgroundColor: colors.primary },
+            !text.trim() && { opacity: 0.5 }
+          ]}
           onPress={handleSubmit}
           disabled={!text.trim()}
+          hapticType={HapticType.ImpactMedium}
         >
           <ThemedText style={styles.submitButtonText} lightColor="#FFFFFF" darkColor="#FFFFFF">
             Add
           </ThemedText>
-        </TouchableOpacity>
-      </View>
-    </ThemedView>
+        </TactileButton>
+      </Animated.View>
+    </Animated.View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -109,6 +117,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 8,
+    alignItems: 'center',
   },
   priorityButton: {
     flex: 1,

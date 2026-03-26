@@ -25,8 +25,12 @@ const MAPPING = {
   'leaf.fill': 'eco',
   'square.and.arrow.up': 'file-upload',
   'trash.fill': 'delete',
+  'trash': 'delete',
   'info.circle.fill': 'info',
   'plus': 'add',
+  'plus.circle': 'add-circle',
+  'checkmark': 'check',
+  'ellipsis.circle': 'more-horiz',
 } as IconMapping;
 
 /**

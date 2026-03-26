@@ -2,8 +2,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { HapticType, TactileButton } from '@/components/ui/TactileButton';
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from 'react';
-import { Keyboard, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Keyboard, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 
 interface AddHabitFormProps {
   onSubmit: (name: string, icon?: string) => void;
@@ -29,71 +32,101 @@ export function AddHabitForm({ onSubmit, onCancel }: AddHabitFormProps) {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              backgroundColor: colors.backgroundSubtle,
-              borderColor: colors.habitStroke,
-            },
-          ]}
-          placeholder="Add a habit name..."
-          placeholderTextColor={colors.icon}
-          value={name}
-          onChangeText={setName}
-          onSubmitEditing={handleSubmit}
-          autoFocus
-        />
-      </View>
-
-      {/* Quick icon choices */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <ThemedText style={{ fontWeight: '600' }}>Icon:</ThemedText>
-        {['fitness', 'book', 'medkit', 'water', 'leaf', 'alarm'].map((k) => (
-          <TouchableOpacity key={k} onPress={() => setIcon(`ios-${k}`)}
-            style={{
-              paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12,
-              borderWidth: 1, borderColor: colors.habitStroke,
-              backgroundColor: icon === `ios-${k}` ? colors.backgroundSubtle : 'transparent',
-            }}
-          >
-            <ThemedText>{k}</ThemedText>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity onPress={() => setIcon(undefined)}
-          style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.habitStroke }}>
-          <ThemedText>None</ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.actions}>
-        {onCancel && (
-          <TouchableOpacity
-            style={[styles.cancelButton, { borderColor: colors.habitStroke }]}
-            onPress={onCancel}
-          >
-            <ThemedText style={styles.cancelButtonText} lightColor={colors.text} darkColor={colors.text}>
-              Cancel
-            </ThemedText>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: colors.primary }]}
-          onPress={handleSubmit}
-          disabled={name.trim().length === 0}
-        >
-          <ThemedText style={styles.submitButtonText} lightColor="#FFFFFF" darkColor="#FFFFFF">
-            Add Habit
+    <Animated.View 
+      layout={LinearTransition} 
+      entering={FadeIn.duration(300)}
+      exiting={FadeOut.duration(200)}
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <ThemedView style={{ backgroundColor: 'transparent' }}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                color: colors.text,
+                backgroundColor: colors.backgroundSubtle,
+                borderColor: colors.habitStroke,
+              },
+            ]}
+            placeholder="Add a habit name..."
+            placeholderTextColor={colors.icon}
+            value={name}
+            onChangeText={setName}
+            onSubmitEditing={handleSubmit}
+            autoFocus
+            maxLength={12}
+          />
+          <ThemedText style={{ position: 'absolute', right: 12, top: 14, fontSize: 12, opacity: 0.5 }}>
+            {name.length}/12
           </ThemedText>
-        </TouchableOpacity>
-      </View>
-    </ThemedView>
+        </View>
+
+        {/* Quick icon choices */}
+        <Animated.View layout={LinearTransition} style={{ marginBottom: 16 }}>
+          <ThemedText style={{ fontWeight: '600', marginBottom: 8 }}>Icon:</ThemedText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {['water', 'barbell', 'book', 'moon', 'briefcase', 'leaf', 'alarm', 'flame'].map((iconName) => (
+              <TactileButton
+                key={iconName}
+                onPress={() => setIcon(iconName)}
+                style={{
+                  width: 40, height: 40, borderRadius: 20,
+                  borderWidth: 1, borderColor: colors.habitStroke,
+                  backgroundColor: icon === iconName ? colors.tint : 'transparent',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+                hapticType={HapticType.Selection}
+              >
+                <Ionicons name={iconName as any} size={20} color={icon === iconName ? '#FFF' : colors.text} />
+              </TactileButton>
+            ))}
+
+            {/* Clear Button */}
+            <TactileButton
+              onPress={() => setIcon(undefined)}
+              style={{
+                width: 40, height: 40, borderRadius: 20,
+                borderWidth: 1, borderColor: colors.habitStroke,
+                justifyContent: 'center', alignItems: 'center',
+              }}
+              hapticType={HapticType.Selection}
+            >
+              <Ionicons name="close" size={20} color={colors.text} />
+            </TactileButton>
+          </View>
+        </Animated.View>
+
+        <Animated.View layout={LinearTransition} style={styles.actions}>
+          {onCancel && (
+            <TactileButton
+              style={[styles.cancelButton, { borderColor: colors.habitStroke }]}
+              onPress={onCancel}
+              hapticType={HapticType.Selection}
+            >
+              <ThemedText style={styles.cancelButtonText} lightColor={colors.text} darkColor={colors.text}>
+                Cancel
+              </ThemedText>
+            </TactileButton>
+          )}
+
+          <TactileButton
+            style={[styles.submitButton, { backgroundColor: colors.primary }]}
+            onPress={handleSubmit}
+            disabled={name.trim().length === 0}
+            hapticType={HapticType.ImpactMedium}
+          >
+            <ThemedText style={styles.submitButtonText} lightColor="#FFFFFF" darkColor="#FFFFFF">
+              Add Habit
+            </ThemedText>
+          </TactileButton>
+        </Animated.View>
+      </ThemedView>
+    </Animated.View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
