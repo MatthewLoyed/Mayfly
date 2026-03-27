@@ -25,11 +25,12 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import Animated, { LinearTransition } from "react-native-reanimated";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import Animated, { FadeInDown, LinearTransition } from "react-native-reanimated";
+import { BackgroundEnvironment } from "@/components/ui/BackgroundEnvironment";
 
 /**
  * Butterfly Garden - Habit tracking with Streaks-like theme
@@ -144,21 +145,14 @@ export default function GardenScreen() {
   const pageWidth = width;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Background - Optional: keep image or go solid for Streaks look? Let's keep the user's preferred "Garden" bg for now but make it subtle? */}
-      <Image
-        source={require("@/assets/images/Garden.jpg")}
-        style={styles.backgroundImage}
-        contentFit="cover"
-        priority="high"
-      />
-      <View style={styles.overlay} />
+    <BackgroundEnvironment>
+      <SafeAreaView style={styles.container} edges={["top"]}>
 
       <View style={styles.header}>
-        <ThemedText type="titleRounded" style={styles.title}>
+        <ThemedText type="titleRounded" style={[styles.title, { color: colors.text }]}>
           Garden
         </ThemedText>
-        <ThemedText type="subtitleSerif" style={styles.subtitle}>
+        <ThemedText type="subtitleSerif" style={[styles.subtitle, { color: colors.textSecondary }]}>
           Nurture your habits
         </ThemedText>
       </View>
@@ -195,11 +189,11 @@ export default function GardenScreen() {
               style={[styles.pageContainer, { width: pageWidth }]}
             >
               <View style={styles.grid}>
-                {pageHabits.map((habit) => (
+                {pageHabits.map((habit, habitIndex) => (
                   <Animated.View
                     key={habit.id}
                     style={styles.gridItem}
-                    layout={LinearTransition}
+                    entering={FadeInDown.delay(habitIndex * 100).springify()}
                   >
                     <ButterflyHabit
                       habit={habit}
@@ -269,6 +263,7 @@ export default function GardenScreen() {
         </TouchableWithoutFeedback>
       </Modal>
     </SafeAreaView>
+    </BackgroundEnvironment>
   );
 }
 
@@ -374,28 +369,30 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 24,
     bottom: 32,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64, // Slightly larger
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: "#9CAF88", // Glow based on primary (Sage)
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 0 },
   },
   settingsFab: {
     position: 'absolute',
     left: 24,
     bottom: 32,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
   modalBackdrop: {

@@ -50,26 +50,28 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+    fontWeight: '800',
+    lineHeight: 36,
     fontFamily: Fonts?.sans,
   },
   titleRounded: {
     fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+    fontWeight: '800',
+    lineHeight: 36,
     fontFamily: Fonts?.rounded,
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     fontFamily: Fonts?.sans,
+    letterSpacing: -0.5,
   },
   subtitleSerif: {
     fontSize: 22,
     fontWeight: '600',
     fontFamily: Fonts?.serif,
     fontStyle: 'italic',
+    opacity: 0.9,
   },
   link: {
     lineHeight: 30,

@@ -135,8 +135,18 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
         return;
       }
       if (query.startsWith('INSERT INTO todos')) {
-        const [id, text, completed, priority, created_at, updated_at] = params;
-        memoryStore.todos.push({ id, text, completed, priority, created_at, updated_at });
+        const [id, text, priority, order_index, due_at, created_at, updated_at] = params;
+        memoryStore.todos.push({ 
+          id, 
+          text, 
+          completed: 0, 
+          priority: priority === 1, 
+          order_index, 
+          due_at, 
+          estimated_minutes: null,
+          created_at, 
+          updated_at 
+        });
         return;
       }
       if (query.startsWith('UPDATE todos SET completed =')) {
@@ -155,6 +165,22 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
         const [text, updated_at, id] = params;
         const t = memoryStore.todos.find((x) => x.id === id);
         if (t) { t.text = text; t.updated_at = updated_at; }
+        return;
+      }
+      if (query.startsWith('UPDATE todos SET due_at =')) {
+        const [due_at, estimated_minutes, updated_at, id] = params;
+        const t = memoryStore.todos.find((x) => x.id === id);
+        if (t) { 
+          t.due_at = due_at; 
+          t.estimated_minutes = estimated_minutes;
+          t.updated_at = updated_at; 
+        }
+        return;
+      }
+      if (query.startsWith('UPDATE todos SET order_index =')) {
+        const [order_index, id] = params;
+        const t = memoryStore.todos.find((x) => x.id === id);
+        if (t) { t.order_index = order_index; }
         return;
       }
       if (query.startsWith('DELETE FROM todos WHERE id =')) {

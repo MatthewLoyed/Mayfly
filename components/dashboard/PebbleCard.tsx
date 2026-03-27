@@ -1,5 +1,6 @@
 import { HapticType, TactileButton } from '@/components/ui/TactileButton';
 import { StyleSheet, ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import { useColorScheme } from '../../hooks/use-color-scheme';
 import { ThemedText } from '../themed-text';
@@ -23,7 +24,7 @@ export function PebbleCard({ label, value, color, style, onPress }: PebbleCardPr
                 styles.card,
                 {
                     backgroundColor: colors.cardBackground,
-                    borderLeftColor: color || colors.primary
+                    borderColor: colors.habitStroke + '33',
                 },
                 style
             ]}
@@ -31,10 +32,16 @@ export function PebbleCard({ label, value, color, style, onPress }: PebbleCardPr
             hapticType={HapticType.Selection}
             scaleValue={0.96}
         >
+            <LinearGradient
+                colors={[`${color || colors.primary}33`, `transparent`]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+            />
             <ThemedText style={styles.value} darkColor={color || colors.primary}>
                 {value}
             </ThemedText>
-            <ThemedText style={styles.label} darkColor="#A3B18A">
+            <ThemedText style={styles.label} darkColor={colors.textSecondary}>
                 {label}
             </ThemedText>
         </TactileButton>
@@ -43,16 +50,15 @@ export function PebbleCard({ label, value, color, style, onPress }: PebbleCardPr
 
 const styles = StyleSheet.create({
     card: {
-        padding: 20,
-        borderRadius: 24,
-        borderTopLeftRadius: 16,
-        borderBottomRightRadius: 16,
-        borderLeftWidth: 4, // Re-adding subtle left accent
+        padding: 24,
+        borderRadius: 32,
+        borderWidth: 1,
+        overflow: 'hidden',
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
         minWidth: '45%',
         flex: 1,
     },

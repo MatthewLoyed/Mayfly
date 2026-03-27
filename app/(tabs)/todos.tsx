@@ -12,6 +12,7 @@ import { type Todo } from '@/types/todo';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackgroundEnvironment } from '@/components/ui/BackgroundEnvironment';
 
 /**
  * Todo list screen
@@ -129,10 +130,11 @@ export default function TodosScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <BackgroundEnvironment>
+      <SafeAreaView style={styles.container} edges={['top']}>
       <ThemedView style={styles.content}>
         <ThemedView style={styles.header}>
-          <ThemedText type="title">My Tasks</ThemedText>
+          <ThemedText type="titleRounded" style={{ color: colors.text }}>My Tasks</ThemedText>
         </ThemedView>
         <TodoList
           todos={todos}
@@ -140,6 +142,7 @@ export default function TodosScreen() {
           onAddTodo={handleAddTodo}
           onSaveDetails={handleSaveDetails}
           onDeleteTodo={handleDeleteTodo}
+          onRefresh={loadTodos}
           emptyMessage="No todos yet! Add one to get started!"
         />
 
@@ -153,6 +156,7 @@ export default function TodosScreen() {
         )}
       </ThemedView>
     </SafeAreaView>
+    </BackgroundEnvironment>
   );
 }
 

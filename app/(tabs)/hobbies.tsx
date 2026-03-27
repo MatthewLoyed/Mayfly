@@ -1,37 +1,32 @@
-import { WeeksCharacter } from '@/components/character/WeeksCharacter';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { PursuitsHome } from '@/components/pursuits/PursuitsHome';
+import { PursuitDetail } from '@/components/pursuits/PursuitDetail';
 
 /**
- * Hobbies placeholder screen
+ * Pursuits screen (formerly Hobbies)
+ * Integrated from Figma creation
  */
 export default function HobbiesScreen() {
-  const message = "Hobbies coming soon! What makes you happy?";
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'dark'];
+  const [selectedPursuitId, setSelectedPursuitId] = useState<string | null>(null);
+
+  if (selectedPursuitId) {
+    return (
+      <View style={styles.container}>
+        <PursuitDetail 
+          pursuitId={selectedPursuitId} 
+          onBack={() => setSelectedPursuitId(null)} 
+        />
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <ThemedView style={styles.content}>
-        <View style={styles.emptyContainer}>
-          <WeeksCharacter size={120} mood="happy" animated={true} />
-          <ThemedText type="title" style={styles.title}>
-            Hobbies
-          </ThemedText>
-          <ThemedText type="subtitle" style={styles.subtitle}>
-            {message}
-          </ThemedText>
-          <ThemedText style={styles.description}>
-            This feature will be coming soon. For now, focus on your habits and todos!
-          </ThemedText>
-        </View>
-      </ThemedView>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <PursuitsHome 
+        onSelectPursuit={(id) => setSelectedPursuitId(id)} 
+      />
+    </View>
   );
 }
 
@@ -39,28 +34,4 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  title: {
-    marginTop: 24,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  subtitle: {
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  description: {
-    textAlign: 'center',
-    opacity: 0.7,
-    maxWidth: 300,
-  },
 });
-

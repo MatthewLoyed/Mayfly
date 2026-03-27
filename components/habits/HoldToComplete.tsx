@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { LongPressGestureHandler, State } from "react-native-gesture-handler";
 import Animated, {
+  interpolate,
   runOnJS,
   SharedValue,
   useAnimatedStyle,
@@ -114,8 +115,12 @@ export function HoldToComplete({
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: progress.value > 0 ? 0.95 : 1,
     transform: [{ scale: pressScale.value }],
+    shadowColor: "#9CAF88", // Sage Glow
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: interpolate(progress.value, [0, 1], [0, 0.6]),
+    shadowRadius: interpolate(progress.value, [0, 1], [0, 20]),
+    elevation: interpolate(progress.value, [0, 1], [0, 8]),
   }));
 
   return (

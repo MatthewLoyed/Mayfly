@@ -3,15 +3,15 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { reorderTodos } from "@/services/todo-service";
+import { reorderTodos, updateTodoDetails } from "@/services/todo-service";
 import { type Todo } from "@/types/todo";
+import { format, isSameDay, addDays, startOfDay, parseISO } from "date-fns";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
   Modal,
-  Pressable,
   StyleSheet,
   TouchableWithoutFeedback,
   View,
@@ -19,16 +19,12 @@ import {
 import DraggableFlatList, {
   RenderItemParams,
 } from "react-native-draggable-flatlist";
-import AnimatedReanimated, {
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
+import { LinearTransition } from "react-native-reanimated";
 import { HapticType, TactileButton } from "@/components/ui/TactileButton";
 import { AddTodoForm } from "./AddTodoForm";
 import { TodoDetailsModal } from "./TodoDetailsModal";
 import { TodoItem } from "./TodoItem";
+import { TodoSectionHeader } from "./TodoSectionHeader";
 
 interface TodoListProps {
   todos: Todo[];
@@ -40,7 +36,12 @@ interface TodoListProps {
     details: { dueAt: string | null; estimatedMinutes: number | null },
   ) => void | Promise<void>;
   onDeleteTodo?: (todoId: string) => void;
+  onRefresh?: () => void | Promise<void>;
 }
+
+type ListItem = 
+  | { id: string; type: 'header'; title: string; date: string | null; collapsed: boolean; count: number }
+  | { id: string; type: 'todo'; data: Todo };
 
 /**
  * Scrollable list of todos with add form and drag-and-drop reordering
@@ -52,34 +53,21 @@ export function TodoList({
   emptyMessage,
   onSaveDetails,
   onDeleteTodo,
+  onRefresh,
 }: TodoListProps) {
-  const [showCompleted] = useState(true);
-  const [localTodos, setLocalTodos] = useState<Todo[]>(todos);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Todo | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const emptyPulse = useRef(new Animated.Value(0.6)).current;
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "dark"];
-  const fabScale = useSharedValue(1);
-
-  const fabAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: fabScale.value }],
-  }));
-
-  useEffect(() => {
-    setLocalTodos(todos);
-  }, [todos]);
-
-  const visibleTodos = useMemo(() => {
-    return showCompleted ? localTodos : localTodos.filter((t) => !t.completed);
-  }, [localTodos, showCompleted]);
 
   const completedCount = todos.filter((todo) => todo.completed).length;
   const totalCount = todos.length;
 
   useEffect(() => {
-    if (visibleTodos.length === 0) {
+    if (todos.length === 0) {
       const loop = Animated.loop(
         Animated.sequence([
           Animated.timing(emptyPulse, {
@@ -99,28 +87,137 @@ export function TodoList({
       loop.start();
       return () => loop.stop();
     }
-  }, [visibleTodos.length, emptyPulse]);
+  }, [todos.length, emptyPulse]);
+
+  const flattenedData = useMemo(() => {
+    const today = startOfDay(new Date());
+    const days = [
+      { title: 'Today', date: today },
+      { title: 'Tomorrow', date: addDays(today, 1) },
+      ...Array.from({ length: 5 }, (_, i) => {
+        const d = addDays(today, i + 2);
+        return { title: format(d, 'EEEE'), date: d };
+      }),
+    ];
+
+    const result: ListItem[] = [];
+
+    days.forEach((day) => {
+      const sectionTodos = todos.filter((t) => {
+        // If it's the Today section, also include unscheduled todos (legacy/fallback)
+        if (!t.dueAt) return day.title === 'Today';
+        return isSameDay(parseISO(t.dueAt), day.date);
+      });
+
+      const sectionId = format(day.date, 'yyyy-MM-dd');
+      const isCollapsed = collapsedSections[sectionId] || false;
+
+      result.push({
+        id: `header-${sectionId}`,
+        type: 'header',
+        title: day.title,
+        date: day.date ? day.date.toISOString() : null,
+        collapsed: isCollapsed,
+        count: sectionTodos.length,
+      });
+
+      if (!isCollapsed) {
+        sectionTodos.forEach((todo) => {
+          result.push({
+            id: todo.id,
+            type: 'todo',
+            data: todo,
+          });
+        });
+      }
+    });
+
+    return result;
+  }, [todos, collapsedSections]);
+
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   const handleAddTodo = (text: string, priority: boolean) => {
     onAddTodo(text, priority);
     setIsAdding(false);
   };
 
-  const handleDragEnd = async ({ data }: { data: Todo[] }) => {
-    setLocalTodos(data);
-    const ids = data.map((t) => t.id);
+  const handleDragEnd = async ({ data }: { data: ListItem[] }) => {
+    // Find todos and their new potential due dates
+    let currentNewDate: string | null | undefined = undefined;
+    const finalTodoOrder: string[] = [];
+    const updates: Promise<any>[] = [];
+
+    data.forEach((item) => {
+      if (item.type === 'header') {
+        currentNewDate = item.date;
+      } else if (item.type === 'todo') {
+        finalTodoOrder.push(item.id);
+        
+        // If the todo moved to a new section, update its dueAt
+        if (currentNewDate !== undefined && item.data.dueAt !== currentNewDate) {
+          updates.push(updateTodoDetails(item.id, {
+            dueAt: currentNewDate,
+            estimatedMinutes: item.data.estimatedMinutes ?? null
+          }));
+        }
+      }
+    });
+
     try {
-      // Rule 2: Medium for completions/actions
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await reorderTodos(ids);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (updates.length > 0) {
+        await Promise.all(updates);
+      }
+      // Notify parent to refresh data
+      if (onRefresh) {
+        await onRefresh();
+      }
     } catch (error) {
-      console.error("Failed to reorder todos:", error);
+      console.error("Failed to reorder/reschedule todos:", error);
     }
+  };
+
+  const renderItem = ({ item, drag, isActive }: RenderItemParams<ListItem>) => {
+    if (item.type === 'header') {
+      const sectionId = item.date ? format(parseISO(item.date), 'yyyy-MM-dd') : 'unscheduled';
+      return (
+        <TodoSectionHeader
+          title={item.title}
+          count={item.count}
+          isCollapsed={item.collapsed}
+          onToggle={() => toggleSection(sectionId)}
+        />
+      );
+    }
+
+    return (
+      <TodoItem
+        todo={item.data}
+        onToggle={() => onToggleTodo(item.data.id)}
+        onPress={() => {
+          Haptics.selectionAsync();
+          setSelected(item.data);
+          setShowDetails(true);
+        }}
+        drag={() => {
+          Haptics.selectionAsync();
+          if (drag) drag();
+        }}
+        isActive={isActive}
+        onDelete={() => onDeleteTodo && onDeleteTodo(item.data.id)}
+      />
+    );
   };
 
   return (
     <View style={styles.container}>
-      {visibleTodos.length === 0 ? (
+      {todos.length === 0 ? (
         <Animated.View style={[styles.emptyContainer, { opacity: emptyPulse }]}>
           <ThemedText type="subtitle" style={styles.emptyText}>
             {emptyMessage || "No todos yet. Add one to get started!"}
@@ -128,32 +225,14 @@ export function TodoList({
         </Animated.View>
       ) : (
         <DraggableFlatList
-          data={visibleTodos}
+          data={flattenedData}
           onDragEnd={handleDragEnd}
           keyExtractor={(item) => item.id}
-          // @ts-ignore: Library types might be outdated, containerStyle is required for layout
-          containerStyle={styles.list}
+          style={styles.list}
           contentContainerStyle={styles.listContent}
-          // @ts-ignore: Library types might be outdated
-          itemLayoutAnimation={LinearTransition}
-          renderItem={({ item, drag, isActive }: RenderItemParams<Todo>) => (
-            <TodoItem
-              todo={item}
-              onToggle={() => onToggleTodo(item.id)}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setSelected(item);
-                setShowDetails(true);
-              }}
-              drag={() => {
-                // Rule 2: Selection for start of drag
-                Haptics.selectionAsync();
-                if (drag) drag();
-              }}
-              isActive={isActive}
-              onDelete={() => onDeleteTodo && onDeleteTodo(item.id)}
-            />
-          )}
+          // @ts-ignore
+          itemLayoutAnimation={LinearTransition.springify().damping(18).stiffness(120)}
+          renderItem={renderItem}
         />
       )}
 
@@ -165,7 +244,7 @@ export function TodoList({
         </ThemedView>
       )}
 
-      {/* Floating add button - Unified with TactileButton */}
+      {/* Floating add button */}
       <TactileButton
         onPress={() => setIsAdding(true)}
         hapticType={HapticType.ImpactMedium}
@@ -179,7 +258,6 @@ export function TodoList({
       >
         <IconSymbol name="plus" size={32} color="#FFFFFF" />
       </TactileButton>
-
 
       {/* Modal for adding todo */}
       <Modal
@@ -201,7 +279,6 @@ export function TodoList({
         </View>
       </Modal>
 
-      {/* Details modal - save handled by parent screen */}
       <TodoDetailsModal
         visible={showDetails}
         todo={selected}
@@ -209,18 +286,6 @@ export function TodoList({
         onSave={async (details) => {
           if (selected && onSaveDetails) {
             await onSaveDetails(selected.id, details);
-            // Optimistically reflect details without waiting for parent refresh
-            setLocalTodos((prev) =>
-              prev.map((t) =>
-                t.id === selected.id
-                  ? {
-                    ...t,
-                    dueAt: details.dueAt,
-                    estimatedMinutes: details.estimatedMinutes,
-                  }
-                  : t,
-              ),
-            );
           }
           setShowDetails(false);
         }}

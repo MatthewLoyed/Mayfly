@@ -156,8 +156,11 @@ export function TodoItem({
       enableTrackpadTwoFingerGesture
     >
       <Animated.View
+        entering={FadeIn.duration(300)}
+        exiting={FadeOut.duration(200)}
         style={[
           styles.container,
+          { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '22' },
           todo.priority && styles.priorityContainer,
           containerAnimatedStyle,
         ]}
@@ -218,14 +221,16 @@ export function TodoItem({
               textScale.value = withSpring(1);
             }}
           >
-            <Animated.View style={textAnimatedStyle}>
+            <Animated.View style={[textAnimatedStyle, styles.textInnerContainer]}>
               <ThemedText
                 style={[
                   styles.text,
                   todo.completed && styles.completedText,
                   todo.priority && styles.priorityText,
+                  { flex: 1 }
                 ]}
-                numberOfLines={2}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {todo.text}
               </ThemedText>
@@ -243,6 +248,7 @@ export function TodoItem({
                     <View
                       style={[
                         styles.metaPill,
+                        { borderColor: colors.habitStroke + '44' },
                         (todo.estimatedMinutes <= 5 && styles.metaGreen) ||
                         (todo.estimatedMinutes > 60 && styles.metaRed) ||
                         (todo.estimatedMinutes >= 15 &&
@@ -251,7 +257,7 @@ export function TodoItem({
                         null,
                       ]}
                     >
-                      <ThemedText style={styles.metaPillText}>
+                      <ThemedText style={[styles.metaPillText, { color: colors.textSecondary }]}>
                         {todo.estimatedMinutes}m
                       </ThemedText>
                     </View>
@@ -307,14 +313,20 @@ export function TodoItem({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     marginVertical: 4,
-    borderRadius: 12,
-    backgroundColor: "transparent",
+    borderRadius: 24, // More rounded for premium feel
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   priorityContainer: {
-    backgroundColor: "rgba(108, 92, 231, 0.1)", // Light purple background
+    backgroundColor: "rgba(108, 92, 231, 0.08)", // Softer purple
+    borderColor: "rgba(108, 92, 231, 0.2)",
   },
   activeContainer: {
     elevation: 4,
@@ -367,11 +379,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  textInnerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   metaRow: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 6,
     alignItems: "center",
+    marginLeft: 12,
   },
   metaPill: {
     borderWidth: 1,

@@ -23,8 +23,9 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import Animated, { LinearTransition, FadeIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { BackgroundEnvironment } from "@/components/ui/BackgroundEnvironment";
 import { ButterflyHero } from "../../components/dashboard/ButterflyHero";
 import { GrowthForestChart } from "../../components/dashboard/GrowthForestChart";
 import { LivingProgressBar } from "../../components/dashboard/LivingProgressBar";
@@ -123,22 +124,18 @@ export default function DashboardScreen() {
   const padding = isSmallScreen ? 16 : 24;
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      edges={["top"]}
-    >
-      <LinearGradient
-        colors={[colors.background, '#121412']} // Deep Charcoal to Dark Moss
-        style={styles.backgroundGradient}
-      />
+    <BackgroundEnvironment>
+      <SafeAreaView
+        style={styles.container}
+        edges={["top"]}
+      >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.content, { padding, paddingBottom: 100 }]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View 
-          entering={FadeIn.duration(600)}
-          layout={LinearTransition}
+          entering={FadeInDown.duration(800).springify()}
         >
           {/* Butterfly Hero Section */}
           <ButterflyHero
@@ -149,10 +146,10 @@ export default function DashboardScreen() {
 
         {/* Today's Focus - Pebble Card Style */}
         <Animated.View
-          layout={LinearTransition}
+          entering={FadeInDown.delay(200).duration(800).springify()}
           style={[styles.section, { padding: isSmallScreen ? 16 : 24 }]}
         >
-          <ThemedText type="titleRounded" style={styles.sectionTitle}>
+          <ThemedText type="titleRounded" style={[styles.sectionTitle, { color: colors.text }]}>
             Current Growth
           </ThemedText>
 
@@ -175,10 +172,10 @@ export default function DashboardScreen() {
 
         {/* Statistics Section */}
         <Animated.View
-          layout={LinearTransition}
+          entering={FadeInDown.delay(400).duration(800).springify()}
           style={[styles.section, { padding: isSmallScreen ? 16 : 24, marginTop: 16 }]}
         >
-          <ThemedText type="titleRounded" style={styles.sectionTitle}>
+          <ThemedText type="titleRounded" style={[styles.sectionTitle, { color: colors.text }]}>
             Ecosystem Stats
           </ThemedText>
 
@@ -202,15 +199,19 @@ export default function DashboardScreen() {
         </Animated.View>
 
         {/* Bottom Swipe Hint */}
-        <View style={styles.swipeHint}>
+        <Animated.View
+          entering={FadeInDown.delay(600).duration(800).springify()}
+          style={styles.swipeHint}
+        >
           <ThemedText style={{ color: colors.icon, fontSize: 12 }}>
             Swipe to tend your garden
           </ThemedText>
           <View style={[styles.swipeBar, { backgroundColor: '#E6B874' }]} />
-        </View>
+        </Animated.View>
 
       </ScrollView>
     </SafeAreaView>
+    </BackgroundEnvironment>
   );
 }
 

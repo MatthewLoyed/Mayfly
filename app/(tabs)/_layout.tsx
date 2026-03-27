@@ -24,8 +24,11 @@ export default function TabLayout() {
         headerTintColor: colors.text,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.backgroundSubtle,
+          backgroundColor: colors.cardBackground,
+          borderTopColor: colors.habitStroke + '22',
+          elevation: 0,
+          height: 60,
+          paddingBottom: 8,
         },
       }}>
       <Tabs.Screen
@@ -33,7 +36,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
+            <Animated.View style={{ transform: [{ scale: focused ? 1.15 : 1 }] }}>
               <IconSymbol size={28} name="house.fill" color={color} />
             </Animated.View>
           ),
@@ -42,9 +45,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="todos"
         options={{
-          title: 'Todos',
+          title: 'Tasks',
           tabBarIcon: ({ color, focused }) => (
-            <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
+            <Animated.View style={{ transform: [{ scale: focused ? 1.15 : 1 }] }}>
               <IconSymbol size={28} name="checklist" color={color} />
             </Animated.View>
           ),
@@ -55,7 +58,7 @@ export default function TabLayout() {
         options={{
           title: 'Garden',
           tabBarIcon: ({ color, focused }) => (
-            <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
+            <Animated.View style={{ transform: [{ scale: focused ? 1.15 : 1 }] }}>
               <IconSymbol size={28} name="leaf.fill" color={color} />
             </Animated.View>
           ),
@@ -64,9 +67,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="hobbies"
         options={{
-          title: 'Hobbies',
+          title: 'Pursuits',
           tabBarIcon: ({ color, focused }) => (
-            <Animated.View style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}>
+            <Animated.View style={{ transform: [{ scale: focused ? 1.15 : 1 }] }}>
               <IconSymbol size={28} name="star.fill" color={color} />
             </Animated.View>
           ),

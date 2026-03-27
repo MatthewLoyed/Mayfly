@@ -177,7 +177,7 @@ export function ButterflyHabit({
                         style={{
                           fontSize: size * 0.4,
                           color: iconColor,
-                          fontWeight: "bold",
+                          fontWeight: "800",
                         }}
                       >
                         {habit.name.charAt(0).toUpperCase()}
@@ -225,13 +225,13 @@ export function ButterflyHabit({
 
       {/* Label Below */}
       <View style={[styles.labelContainer, { width: size + 20 }]}>
-        <View style={styles.namePill}>
+        <View style={[styles.namePill, { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '33' }]}>
           <ThemedText
             style={styles.name}
             numberOfLines={1}
             ellipsizeMode="tail"
-            lightColor="#FFFFFF"
-            darkColor="#FFFFFF"
+            lightColor={colors.text}
+            darkColor={colors.text}
           >
             {habit.name}
           </ThemedText>
@@ -254,23 +254,21 @@ const styles = StyleSheet.create({
   circle: {
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowColor: "#9CAF88",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
   labelContainer: {
     marginTop: 10,
     alignItems: "center",
   },
   namePill: {
-    backgroundColor: "rgba(0,0,0,0.5)",
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
   },
   name: {
     fontSize: 14,

@@ -84,14 +84,14 @@ export function ButterflyHero({ greeting, completionRate }: ButterflyHeroProps) 
             </Animated.View>
 
             <Animated.View layout={LinearTransition} style={styles.textContainer}>
-                <ThemedText type="title" style={styles.greeting}>
+                <ThemedText type="titleRounded" style={styles.greeting}>
                     {greeting}
                 </ThemedText>
                 <Animated.View 
                     key={completionRate >= 100 ? 'thriving' : 'nurture'}
                     entering={FadeIn.duration(400)}
                 >
-                    <ThemedText style={[styles.subtext, { color: colors.textSecondary }]}>
+                    <ThemedText type="subtitleSerif" style={[styles.subtext, { color: colors.textSecondary }]}>
                         {completionRate >= 100
                             ? "The garden is thriving."
                             : "Nurture your habits to grow."}

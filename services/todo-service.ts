@@ -4,7 +4,11 @@ import { getDatabase } from './database';
 /**
  * Create a new todo
  */
-export async function createTodo(text: string, priority: boolean = false): Promise<Todo> {
+export async function createTodo(
+  text: string,
+  priority: boolean = false,
+  dueAt: string | null = new Date().toISOString()
+): Promise<Todo> {
   const db = await getDatabase();
   const id = `todo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
@@ -29,8 +33,8 @@ export async function createTodo(text: string, priority: boolean = false): Promi
 
   await db.runAsync(
     `INSERT INTO todos (id, text, completed, priority, order_index, due_at, estimated_minutes, created_at, updated_at)
-     VALUES (?, ?, 0, ?, ?, NULL, NULL, ?, ?)`,
-    [id, text, priority ? 1 : 0, nextOrder, now, now]
+     VALUES (?, ?, 0, ?, ?, ?, NULL, ?, ?)`,
+    [id, text, priority ? 1 : 0, nextOrder, dueAt, now, now]
   );
 
   return {
@@ -39,6 +43,7 @@ export async function createTodo(text: string, priority: boolean = false): Promi
     completed: false,
     priority,
     orderIndex: nextOrder,
+    dueAt,
     createdAt: now,
     updatedAt: now,
   };
