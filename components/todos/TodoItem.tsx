@@ -158,14 +158,16 @@ export function TodoItem({
       <Animated.View
         entering={FadeIn.duration(300)}
         exiting={FadeOut.duration(200)}
-        style={[
-          styles.container,
-          { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '22' },
-          todo.priority && styles.priorityContainer,
-          containerAnimatedStyle,
-        ]}
       >
-        <View style={styles.content}>
+        <Animated.View
+          style={[
+            styles.container,
+            { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '22' },
+            todo.priority && styles.priorityContainer,
+            containerAnimatedStyle,
+          ]}
+        >
+          <View style={styles.content}>
           {/* Circular checkbox */}
           <Pressable
             accessibilityRole="button"
@@ -306,6 +308,7 @@ export function TodoItem({
           )}
         </View>
 
+        </Animated.View>
       </Animated.View>
     </Swipeable>
   );

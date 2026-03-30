@@ -30,13 +30,12 @@ export function TodoSectionHeader({ title, count, isCollapsed, onToggle }: TodoS
   return (
     <Pressable onPress={handlePress} style={styles.container}>
       <View style={styles.content}>
-        <Animated.View style={arrowStyle}>
-          <IconSymbol name="chevron.down" size={18} color={colors.textSecondary} />
-        </Animated.View>
         <ThemedText style={styles.title}>{title}</ThemedText>
-        <View style={[styles.badge, { backgroundColor: colors.cardBackground }]}>
-          <ThemedText style={styles.badgeText}>{count}</ThemedText>
-        </View>
+        {count > 0 && (
+          <View style={[styles.badge, { backgroundColor: colors.cardBackground }]}>
+            <ThemedText style={styles.badgeText}>{count}</ThemedText>
+          </View>
+        )}
       </View>
       <View style={[styles.divider, { backgroundColor: colors.habitStroke }]} />
     </Pressable>
@@ -57,7 +56,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "600",
-    marginLeft: 8,
     flex: 1,
   },
   badge: {

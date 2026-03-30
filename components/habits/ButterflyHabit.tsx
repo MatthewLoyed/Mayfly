@@ -73,26 +73,28 @@ export function ButterflyHabit({
   const frontAnimatedStyle = useAnimatedStyle(() => {
     const rotateY = interpolate(flipValue.value, [0, 1], [0, 180]);
     return {
-      flex: 1, // Fill the HoldToComplete container
+      flex: 1, 
       transform: [
         { scale: scaleValue.value },
         { perspective: 1000 },
         { rotateY: `${rotateY}deg` },
       ],
       backfaceVisibility: "hidden",
+      opacity: flipValue.value > 0.5 ? 0 : 1,
     };
   });
 
   const backAnimatedStyle = useAnimatedStyle(() => {
     const rotateY = interpolate(flipValue.value, [0, 1], [180, 360]);
     return {
-      flex: 1, // Fill the Pressable container
+      flex: 1, 
       transform: [
         { scale: scaleValue.value },
         { perspective: 1000 },
         { rotateY: `${rotateY}deg` },
       ],
       backfaceVisibility: "hidden",
+      opacity: flipValue.value <= 0.5 ? 0 : 1,
     };
   });
 

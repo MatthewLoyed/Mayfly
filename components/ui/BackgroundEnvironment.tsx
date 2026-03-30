@@ -27,15 +27,21 @@ export function BackgroundEnvironment({ children }: BackgroundEnvironmentProps) 
 
   const bgFloatY1 = useSharedValue(0);
   const bgFloatY2 = useSharedValue(0);
+  const bgFloatY3 = useSharedValue(0);
 
   useEffect(() => {
     bgFloatY1.value = withRepeat(
-      withTiming(20, { duration: 8000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(30, { duration: 8000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
     bgFloatY2.value = withRepeat(
-      withTiming(-20, { duration: 10000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(-30, { duration: 10000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    bgFloatY3.value = withRepeat(
+      withTiming(15, { duration: 12000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
@@ -44,14 +50,22 @@ export function BackgroundEnvironment({ children }: BackgroundEnvironmentProps) 
   const bgStyle1 = useAnimatedStyle(() => ({
     transform: [
       { translateY: bgFloatY1.value }, 
-      { scale: 1 + bgFloatY1.value / 200 }
+      { scale: 1.1 + bgFloatY1.value / 150 }
     ],
   }));
 
   const bgStyle2 = useAnimatedStyle(() => ({
     transform: [
       { translateY: bgFloatY2.value }, 
-      { scale: 1.2 - bgFloatY2.value / 200 }
+      { scale: 1.3 - bgFloatY2.value / 150 }
+    ],
+  }));
+
+  const bgStyle3 = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: bgFloatY3.value }, 
+      { translateX: bgFloatY3.value * 2 },
+      { scale: 1 + bgFloatY3.value / 100 }
     ],
   }));
 
@@ -80,6 +94,14 @@ export function BackgroundEnvironment({ children }: BackgroundEnvironmentProps) 
             { backgroundColor: theme.tint }
           ]} 
         />
+        <Animated.View 
+          style={[
+            styles.bgBlob, 
+            styles.bgBlob3, 
+            bgStyle3, 
+            { backgroundColor: theme.primary }
+          ]} 
+        />
       </View>
 
       {children}
@@ -94,20 +116,25 @@ const styles = StyleSheet.create({
   bgBlob: {
     position: 'absolute',
     borderRadius: 999,
-    opacity: 0.12,
+    opacity: 0.15, // Slightly increased
   },
   bgBlob1: {
-    top: 100,
-    right: -50,
-    width: 250,
-    height: 250,
-    backgroundColor: '#B5A8D6', // Fallback color
+    top: 50,
+    right: -100,
+    width: 350,
+    height: 350,
   },
   bgBlob2: {
-    bottom: 200,
-    left: -80,
-    width: 300,
-    height: 300,
-    backgroundColor: '#9CAF88', // Fallback color
+    bottom: 50,
+    left: -150,
+    width: 450,
+    height: 450,
+  },
+  bgBlob3: {
+    top: '40%',
+    left: '20%',
+    width: 200,
+    height: 200,
+    opacity: 0.08,
   },
 });

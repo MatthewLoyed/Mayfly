@@ -30,6 +30,11 @@ import { ButterflyHero } from "../../components/dashboard/ButterflyHero";
 import { GrowthForestChart } from "../../components/dashboard/GrowthForestChart";
 import { LivingProgressBar } from "../../components/dashboard/LivingProgressBar";
 import { PebbleCard } from "../../components/dashboard/PebbleCard";
+import { RecapSection } from "../../components/dashboard/RecapSection";
+import { getRandomQuote } from "../../constants/quotes";
+import { type Habit } from "@/types/habit";
+import { toggleTodo } from "@/services/todo-service";
+import { completeHabit } from "@/services/habit-service";
 
 interface WeeklyDataPoint {
   date: string;
@@ -48,8 +53,10 @@ export default function DashboardScreen() {
   const [habitsCompleted, setHabitsCompleted] = useState(0);
   const [totalHabits, setTotalHabits] = useState(0);
   const [priorityTodos, setPriorityTodos] = useState<
-    { id: string; text: string }[]
+    { id: string; text: string; completed: boolean }[]
   >([]);
+  const [nextHabit, setNextHabit] = useState<Habit | undefined>();
+  const [quote, setQuote] = useState<{ text: string; author: string }>(getRandomQuote());
   const [greetingMessage, setGreetingMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [weeklyData, setWeeklyData] = useState<WeeklyDataPoint[]>([]);
@@ -78,6 +85,10 @@ export default function DashboardScreen() {
       setLongestStreak(await getLongestStreak());
       setTotalCompletions(await getTotalCompletions());
 
+      // Find next habit (first incomplete)
+      const firstIncomplete = habits.find(h => !h.completedToday);
+      setNextHabit(firstIncomplete);
+
       // Load weekly data
       const weeklyStats: { date: string; count: number }[] =
         await getWeeklyStats();
@@ -95,14 +106,16 @@ export default function DashboardScreen() {
 
       // Load priority todos
       const priorities = await getPriorityTodos();
-      setPriorityTodos(priorities.map((t) => ({ id: t.id, text: t.text })));
+      setPriorityTodos(priorities.map((t) => ({ id: t.id, text: t.text, completed: t.completed })));
 
       // Load todo stats
       const stats = await getTodoStats();
       setTodoStats(stats);
 
+      // Update quote
+      setQuote(getRandomQuote());
+
       // Get character state and generate greeting
-      const characterState = await getCharacterState();
       const { message } = generateMessage("daily_greeting");
       setGreetingMessage(message);
     } catch (error) {
@@ -123,6 +136,24 @@ export default function DashboardScreen() {
   const isSmallScreen = width < 380;
   const padding = isSmallScreen ? 16 : 24;
 
+  const handleToggleTodo = async (id: string) => {
+    try {
+      await toggleTodo(id);
+      loadDashboardData();
+    } catch (error) {
+      console.error("Error toggling todo:", error);
+    }
+  };
+
+  const handleCompleteHabit = async (id: string) => {
+    try {
+      await completeHabit(id);
+      loadDashboardData();
+    } catch (error) {
+      console.error("Error completing habit:", error);
+    }
+  };
+
   return (
     <BackgroundEnvironment>
       <SafeAreaView
@@ -140,17 +171,32 @@ export default function DashboardScreen() {
           {/* Butterfly Hero Section */}
           <ButterflyHero
             greeting={greetingMessage}
+            quote={quote}
             completionRate={todoStats.completionRate}
           />
         </Animated.View>
 
-        {/* Today's Focus - Pebble Card Style */}
+        {/* Recap Section (PRIORITY) */}
+        <RecapSection
+          priorityTodos={priorityTodos}
+          nextHabit={nextHabit ? {
+            id: nextHabit.id,
+            name: nextHabit.name,
+            color: nextHabit.color || colors.primary,
+          } : undefined}
+          onToggleTodo={handleToggleTodo}
+          onCompleteHabit={handleCompleteHabit}
+          onViewAllTodos={() => router.push('/todos')}
+          onViewGarden={() => router.push('/garden')}
+        />
+
+        {/* Growth Stats - Lower Priority */}
         <Animated.View
-          entering={FadeInDown.delay(200).duration(800).springify()}
-          style={[styles.section, { padding: isSmallScreen ? 16 : 24 }]}
+          entering={FadeInDown.delay(400).duration(800).springify()}
+          style={[styles.section, { padding: isSmallScreen ? 16 : 24, marginTop: 24 }]}
         >
           <ThemedText type="titleRounded" style={[styles.sectionTitle, { color: colors.text }]}>
-            Current Growth
+            Ecosystem Growth
           </ThemedText>
 
           <View style={styles.grid}>
@@ -168,19 +214,9 @@ export default function DashboardScreen() {
               style={{ flexBasis: '48%' }}
             />
           </View>
-        </Animated.View>
 
-        {/* Statistics Section */}
-        <Animated.View
-          entering={FadeInDown.delay(400).duration(800).springify()}
-          style={[styles.section, { padding: isSmallScreen ? 16 : 24, marginTop: 16 }]}
-        >
-          <ThemedText type="titleRounded" style={[styles.sectionTitle, { color: colors.text }]}>
-            Ecosystem Stats
-          </ThemedText>
-
-          {/* Stats Grid */}
-          <View style={styles.grid}>
+          {/* Statistics Section */}
+          <View style={[styles.grid, { marginTop: 16 }]}>
             <PebbleCard
               label="Total Completions"
               value={totalCompletions.toString()}
@@ -192,7 +228,7 @@ export default function DashboardScreen() {
           {/* Growth Forest Chart */}
           <GrowthForestChart data={weeklyData} colors={colors} />
 
-          {/* Todo Compeltion - Living Progress */}
+          {/* Todo Completion - Living Progress */}
           {todoStats.total > 0 && (
             <LivingProgressBar progress={todoStats.completionRate} />
           )}
@@ -200,13 +236,12 @@ export default function DashboardScreen() {
 
         {/* Bottom Swipe Hint */}
         <Animated.View
-          entering={FadeInDown.delay(600).duration(800).springify()}
+          entering={FadeInDown.delay(700).duration(800).springify()}
           style={styles.swipeHint}
         >
           <ThemedText style={{ color: colors.icon, fontSize: 12 }}>
-            Swipe to tend your garden
+            Mayfly lives for a day. Make yours count.
           </ThemedText>
-          <View style={[styles.swipeBar, { backgroundColor: '#E6B874' }]} />
         </Animated.View>
 
       </ScrollView>

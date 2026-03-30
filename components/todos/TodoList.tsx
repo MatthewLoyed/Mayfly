@@ -228,21 +228,15 @@ export function TodoList({
           data={flattenedData}
           onDragEnd={handleDragEnd}
           keyExtractor={(item) => item.id}
-          style={styles.list}
+          // @ts-ignore - Library types might be outdated
+          containerStyle={styles.list}
           contentContainerStyle={styles.listContent}
           // @ts-ignore
-          itemLayoutAnimation={LinearTransition.springify().damping(18).stiffness(120)}
+          itemLayoutAnimation={LinearTransition}
           renderItem={renderItem}
         />
       )}
 
-      {totalCount > 0 && (
-        <ThemedView style={styles.footer}>
-          <ThemedText style={styles.footerText}>
-            {completedCount} of {totalCount} completed
-          </ThemedText>
-        </ThemedView>
-      )}
 
       {/* Floating add button */}
       <TactileButton

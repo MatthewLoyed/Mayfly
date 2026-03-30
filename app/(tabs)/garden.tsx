@@ -18,10 +18,12 @@ import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
-  TouchableWithoutFeedback,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -145,8 +147,13 @@ export default function GardenScreen() {
   const pageWidth = width;
 
   return (
-    <BackgroundEnvironment>
-      <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <Image
+        source={require("@/assets/images/Garden.jpg")}
+        style={styles.backgroundImage}
+        contentFit="cover"
+      />
+      <View style={styles.overlay} />
 
       <View style={styles.header}>
         <ThemedText type="titleRounded" style={[styles.title, { color: colors.text }]}>
@@ -164,9 +171,9 @@ export default function GardenScreen() {
             style={styles.emptyContainer}
             hapticType={HapticType.ImpactMedium}
           >
-            <IconSymbol name="plus.circle" size={64} color="#FFF" />
+            <IconSymbol name="plus" size={48} color="#FFF" />
             <ThemedText type="subtitle" style={styles.emptyText}>
-              Add a task
+              Add a habit
             </ThemedText>
           </TactileButton>
         </View>
@@ -225,22 +232,26 @@ export default function GardenScreen() {
         )}
       </View>
 
-      <TactileButton
-        style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => setIsAdding(true)}
-        hapticType={HapticType.ImpactMedium}
-      >
-        <IconSymbol name="plus" size={32} color="#FFFFFF" />
-      </TactileButton>
+      {habits.length > 0 && (
+        <>
+          <TactileButton
+            style={[styles.fab, { backgroundColor: colors.primary }]}
+            onPress={() => setIsAdding(true)}
+            hapticType={HapticType.ImpactMedium}
+          >
+            <IconSymbol name="plus" size={32} color="#FFFFFF" />
+          </TactileButton>
 
-      {/* Edit/Settings Button (Bottom Left) */}
-      <TactileButton
-        style={[styles.settingsFab, { backgroundColor: isEditing ? colors.tint : colors.backgroundSubtle }]}
-        onPress={() => setIsEditing(!isEditing)}
-        hapticType={HapticType.ImpactMedium}
-      >
-        <IconSymbol name={isEditing ? "checkmark" : "ellipsis.circle"} size={28} color={isEditing ? "#FFF" : colors.text} />
-      </TactileButton>
+          {/* Edit/Settings Button (Bottom Left) */}
+          <TactileButton
+            style={[styles.settingsFab, { backgroundColor: isEditing ? colors.tint : colors.backgroundSubtle }]}
+            onPress={() => setIsEditing(!isEditing)}
+            hapticType={HapticType.ImpactMedium}
+          >
+            <IconSymbol name={isEditing ? "checkmark" : "ellipsis.circle"} size={28} color={isEditing ? "#FFF" : colors.text} />
+          </TactileButton>
+        </>
+      )}
 
       <Modal
         visible={isAdding}
@@ -248,22 +259,23 @@ export default function GardenScreen() {
         animationType="fade"
         onRequestClose={() => setIsAdding(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setIsAdding(false)}>
-          <View style={styles.modalBackdrop}>
-            <View
-              style={styles.modalContent}
-              onStartShouldSetResponder={() => true}
-            >
-              <AddHabitForm
-                onSubmit={handleAddHabit}
-                onCancel={() => setIsAdding(false)}
-              />
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
+        <View style={styles.modalBackdrop}>
+          <Pressable 
+            style={StyleSheet.absoluteFill} 
+            onPress={() => setIsAdding(false)} 
+          />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalContent}
+          >
+            <AddHabitForm
+              onSubmit={handleAddHabit}
+              onCancel={() => setIsAdding(false)}
+            />
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
     </SafeAreaView>
-    </BackgroundEnvironment>
   );
 }
 
@@ -280,23 +292,24 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)", // Darker overlay for 'Premium' feel
   },
   header: {
-    height: 80, // Reduced from 100
+    height: 100, 
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 0,
+    paddingTop: 10,
   },
   title: {
-    color: "white",
-    fontSize: 24, // Slightly smaller
-    fontWeight: "bold",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowRadius: 4,
+    fontSize: 36,
+    fontWeight: "900",
+    textShadowColor: "rgba(0,0,0,0.4)",
+    textShadowRadius: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 12, // Slightly smaller
+    fontSize: 12,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 3,
+    fontWeight: "700",
+    opacity: 0.8,
   },
   scrollView: {
     flex: 1,
@@ -325,8 +338,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyContainer: {
-    padding: 32,
-    borderRadius: 60,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",

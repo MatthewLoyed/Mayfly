@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { LongPressGestureHandler, State } from "react-native-gesture-handler";
 import Animated, {
   interpolate,
@@ -40,6 +40,7 @@ export function HoldToComplete({
   const startTime = useRef(0);
 
   const triggerHaptic = (intensity: "selection" | "medium" | "success" = "selection") => {
+    if (Platform.OS === 'web') return;
     try {
       if (intensity === "selection") {
         Haptics.selectionAsync();

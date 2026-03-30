@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import React from "react";
-import { Pressable, PressableProps, StyleProp, StyleSheet, ViewStyle } from "react-native";
+import { Platform, Pressable, PressableProps, StyleProp, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -96,6 +96,7 @@ export function TactileButton({
   }));
 
   const triggerHaptic = async () => {
+    if (Platform.OS === 'web') return; // Browser intervention guards
     try {
       switch (hapticType) {
         case HapticType.Selection:

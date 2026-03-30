@@ -10,7 +10,7 @@ import { generateMessage, getTodoCompletionContext } from '@/services/message-ge
 import { createTodo, deleteTodo, getAllTodos, toggleTodo, updateTodoDetails } from '@/services/todo-service';
 import { type Todo } from '@/types/todo';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackgroundEnvironment } from '@/components/ui/BackgroundEnvironment';
 
@@ -132,30 +132,30 @@ export default function TodosScreen() {
   return (
     <BackgroundEnvironment>
       <SafeAreaView style={styles.container} edges={['top']}>
-      <ThemedView style={styles.content}>
-        <ThemedView style={styles.header}>
-          <ThemedText type="titleRounded" style={{ color: colors.text }}>My Tasks</ThemedText>
-        </ThemedView>
-        <TodoList
-          todos={todos}
-          onToggleTodo={handleToggleTodo}
-          onAddTodo={handleAddTodo}
-          onSaveDetails={handleSaveDetails}
-          onDeleteTodo={handleDeleteTodo}
-          onRefresh={loadTodos}
-          emptyMessage="No todos yet! Add one to get started!"
-        />
-
-        {/* Character message */}
-        {message && (
-          <CharacterMessage
-            message={message}
-            visible={showMessage}
-            onDismiss={() => setShowMessage(false)}
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <ThemedText type="titleRounded" style={{ color: colors.text }}>My Tasks</ThemedText>
+          </View>
+          <TodoList
+            todos={todos}
+            onToggleTodo={handleToggleTodo}
+            onAddTodo={handleAddTodo}
+            onSaveDetails={handleSaveDetails}
+            onDeleteTodo={handleDeleteTodo}
+            onRefresh={loadTodos}
+            emptyMessage="No todos yet! Add one to get started!"
           />
-        )}
-      </ThemedView>
-    </SafeAreaView>
+
+          {/* Character message */}
+          {message && (
+            <CharacterMessage
+              message={message}
+              visible={showMessage}
+              onDismiss={() => setShowMessage(false)}
+            />
+          )}
+        </View>
+      </SafeAreaView>
     </BackgroundEnvironment>
   );
 }
