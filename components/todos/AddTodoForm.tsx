@@ -117,30 +117,31 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 8,
-    alignItems: 'center',
+    alignItems: 'stretch',
+    minHeight: 44,
   },
   priorityButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   priorityButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   submitButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   submitButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

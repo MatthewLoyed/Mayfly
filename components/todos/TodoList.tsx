@@ -11,7 +11,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   StyleSheet,
   TouchableWithoutFeedback,
   View,
@@ -264,12 +266,15 @@ export function TodoList({
           <TouchableWithoutFeedback onPress={() => setIsAdding(false)}>
             <View style={StyleSheet.absoluteFill} />
           </TouchableWithoutFeedback>
-          <View style={styles.modalContent}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.modalContent}
+          >
             <AddTodoForm
               onSubmit={handleAddTodo}
               onCancel={() => setIsAdding(false)}
             />
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
