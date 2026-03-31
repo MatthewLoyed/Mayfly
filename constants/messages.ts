@@ -77,10 +77,11 @@ export const MESSAGE_SETS: Record<MessageContext, MessageSet> = {
   },
   daily_greeting: {
     messages: [
-      "Hey there! Ready to make today count?",
-      "Good to see you! Let's focus on what matters today.",
-      "Welcome back! Remember: you can't do everything, but you can do what matters.",
-      "Hello! Focus on 3 things today, not 30.",
+      "Hey there!",
+      "Good to see you!",
+      "Welcome back!",
+      "Hello!",
+      "Make today count.",
     ],
     mood: 'happy',
   },

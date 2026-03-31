@@ -38,7 +38,12 @@ export function PebbleCard({ label, value, color, style, onPress }: PebbleCardPr
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
             />
-            <ThemedText style={styles.value} darkColor={color || colors.primary}>
+            <ThemedText 
+                style={styles.value} 
+                darkColor={color || colors.primary}
+                adjustsFontSizeToFit={true}
+                numberOfLines={1}
+            >
                 {value}
             </ThemedText>
             <ThemedText style={styles.label} darkColor={colors.textSecondary}>

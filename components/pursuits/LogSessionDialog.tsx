@@ -60,22 +60,22 @@ export function LogSessionDialog({
       animationType="none"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        behavior="padding"
+        style={styles.overlay}
+      >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
           <Animated.View 
-            entering={FadeIn} 
-            exiting={FadeOut} 
+            entering={FadeIn.duration(200)} 
+            exiting={FadeOut.duration(200)} 
             style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.4)' }]} 
           />
         </Pressable>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
+        <View style={styles.sheetContainer}>
           <Animated.View 
-            entering={SlideInDown.springify().damping(20)}
-            exiting={SlideOutDown}
+            entering={SlideInDown.duration(350)}
+            exiting={SlideOutDown.duration(250)}
             style={[styles.sheet, { backgroundColor: theme.cardBackground }]}
           >
             <View style={styles.header}>
@@ -156,8 +156,8 @@ export function LogSessionDialog({
               </Pressable>
             </ScrollView>
           </Animated.View>
-        </KeyboardAvoidingView>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -165,13 +165,13 @@ export function LogSessionDialog({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
-  keyboardView: {
-    width: '100%',
+  sheetContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: '#fff',
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    maxHeight: Dimensions.get('window').height * 0.7,
+    flexGrow: 0,
   },
   section: {
     marginBottom: 24,

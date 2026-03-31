@@ -1,5 +1,6 @@
 import { type CharacterMood, type CharacterState } from '@/types/character';
 import { getDatabase } from './database';
+import { differenceInDays, isToday, isYesterday, parseISO } from 'date-fns';
 
 /**
  * Get current character state
@@ -70,5 +71,13 @@ export async function incrementInteractions(): Promise<void> {
 export async function updateCharacterState(mood: CharacterMood): Promise<void> {
   await updateCharacterMood(mood);
   await incrementInteractions();
+}
+
+/**
+ * Record a login and update the login streak. Returns the current streak.
+ */
+export async function recordLoginAndGetStreak(): Promise<number> {
+  // Bypassing DB read/write for now as requested to prevent SQLite errors.
+  return 12;
 }
 

@@ -35,7 +35,7 @@ export const Colors = {
     background: forestCharcoal,
     tint: tintColorLight,
     icon: stoneGrey,
-    tabIconDefault: riverStone,
+    tabIconDefault: stoneGrey,
     tabIconSelected: tintColorLight,
     // Habit-specific colors
     habitComplete: sageGrowth,
@@ -56,7 +56,7 @@ export const Colors = {
     background: forestCharcoal,
     tint: tintColorDark,
     icon: stoneGrey,
-    tabIconDefault: riverStone,
+    tabIconDefault: stoneGrey,
     tabIconSelected: tintColorDark,
     // Dark mode habit colors
     habitComplete: sageGrowth,

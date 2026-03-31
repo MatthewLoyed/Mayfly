@@ -159,7 +159,7 @@ export default function GardenScreen() {
         <ThemedText type="titleRounded" style={[styles.title, { color: colors.text }]}>
           Garden
         </ThemedText>
-        <ThemedText type="subtitleSerif" style={[styles.subtitle, { color: colors.textSecondary }]}>
+        <ThemedText type="subtitleSerif" style={[styles.subtitle, { color: colors.text }]}>
           Nurture your habits
         </ThemedText>
       </View>
@@ -305,11 +305,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 14,
     textTransform: "uppercase",
-    letterSpacing: 3,
-    fontWeight: "700",
-    opacity: 0.8,
+    letterSpacing: 2,
+    fontWeight: "600",
+    opacity: 1,
   },
   scrollView: {
     flex: 1,

@@ -78,13 +78,13 @@ export function GrowthForestChart({ data, colors }: GrowthForestChartProps) {
                                         entering={FadeIn.delay(index * 100 + 800)}
                                         style={styles.valueContainer}
                                     >
-                                        <ThemedText style={styles.barValue} darkColor={colors.textSecondary}>
+                                        <ThemedText style={styles.barValue}>
                                             {dataPoint.count}
                                         </ThemedText>
                                     </Animated.View>
                                 )}
                             </View>
-                            <ThemedText style={styles.barLabel} darkColor={colors.textSecondary}>
+                            <ThemedText style={styles.barLabel}>
                                 {dayLabel}
                             </ThemedText>
                         </View>
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontFamily: 'System',
         letterSpacing: 0.5,
-        opacity: 0.9,
+        opacity: 1,
     },
     chart: {
         flexDirection: 'row',
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: '600',
         marginTop: 4,
-        opacity: 0.6,
+        opacity: 0.9,
     },
 });
 

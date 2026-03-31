@@ -68,108 +68,110 @@ export function AddPursuitDialog({ isOpen, onClose, onAdd }: AddPursuitDialogPro
       visible={isOpen}
       animationType="none"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-          <Animated.View 
-            entering={FadeIn} 
-            exiting={FadeOut} 
-            style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.4)' }]} 
-          />
-        </Pressable>
+      {/* Full-screen backdrop — does NOT move with keyboard */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+        <Animated.View 
+          entering={FadeIn.duration(200)} 
+          exiting={FadeOut.duration(200)} 
+          style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.4)' }]} 
+        />
+      </Pressable>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+      {/* KeyboardAvoidingView wraps ONLY the bottom sheet */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.sheetWrapper}
+      >
+        <Animated.View 
+          entering={SlideInDown.duration(350)}
+          exiting={SlideOutDown.duration(250)}
+          style={[styles.sheet, { backgroundColor: theme.cardBackground }]}
         >
-          <Animated.View 
-            entering={SlideInDown.springify().damping(20)}
-            exiting={SlideOutDown}
-            style={[styles.sheet, { backgroundColor: theme.cardBackground }]}
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Begin a New Pursuit</Text>
+            <Pressable 
+              onPress={onClose}
+              style={[styles.closeButton, { backgroundColor: theme.backgroundSubtle }]}
+            >
+              <X size={20} color={theme.icon} />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            style={styles.content}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <View style={styles.header}>
-              <Text style={[styles.headerTitle, { color: theme.text }]}>Begin a New Pursuit</Text>
-              <Pressable 
-                onPress={onClose}
-                style={[styles.closeButton, { backgroundColor: theme.backgroundSubtle }]}
-              >
-                <X size={20} color={theme.icon} />
-              </Pressable>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>What do you want to pursue?</Text>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder="e.g., Learn Piano, Morning Yoga..."
+                placeholderTextColor={theme.icon}
+                style={[styles.input, { borderColor: theme.habitStroke + '33', color: theme.text }]}
+                autoFocus
+              />
             </View>
 
-            <ScrollView bounces={false} style={styles.content}>
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>What do you want to pursue?</Text>
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="e.g., Learn Piano, Morning Yoga..."
-                  placeholderTextColor={theme.icon}
-                  style={[styles.input, { borderColor: theme.habitStroke + '33', color: theme.text }]}
-                  autoFocus
-                />
+            <View style={styles.categorySection}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Choose a category</Text>
+              <View style={styles.categoryGrid}>
+                {categories.map((category) => {
+                  const isSelected = selectedCategory.name === category.name;
+                  return (
+                    <Pressable
+                      key={category.name}
+                      onPress={() => {
+                        setSelectedCategory(category);
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}
+                      style={[
+                        styles.categoryItem,
+                        { 
+                          backgroundColor: isSelected ? `${category.color}99` : `${category.color}22`,
+                          borderColor: isSelected ? category.color : 'transparent',
+                        }
+                      ]}
+                    >
+                      <Text style={[styles.categoryName, { color: theme.text }]}>{category.name}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
+            </View>
 
-               <View style={styles.categorySection}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>Choose a category</Text>
-                <View style={styles.categoryGrid}>
-                  {categories.map((category) => {
-                    const isSelected = selectedCategory.name === category.name;
-                    return (
-                      <Pressable
-                        key={category.name}
-                        onPress={() => {
-                          setSelectedCategory(category);
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }}
-                        style={[
-                          styles.categoryItem,
-                          { 
-                            backgroundColor: isSelected ? `${category.color}99` : `${category.color}22`,
-                            borderColor: isSelected ? category.color : 'transparent',
-                          }
-                        ]}
-                      >
-                        <Text style={[styles.categoryName, { color: theme.text }]}>{category.name}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </View>
-
-              <Pressable
-                onPress={() => {
-                    handleSubmit();
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }}
-                disabled={!title.trim()}
-                style={({ pressed }) => [
-                  styles.submitButton,
-                  { backgroundColor: theme.primary },
-                  !title.trim() && styles.submitButtonDisabled,
-                  pressed && styles.submitButtonPressed
-                ]}
-              >
-                <Text style={[styles.submitButtonText, { color: theme.background }]}>Start Your Journey</Text>
-              </Pressable>
-            </ScrollView>
-          </Animated.View>
-        </KeyboardAvoidingView>
-      </View>
+            <Pressable
+              onPress={() => {
+                handleSubmit();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }}
+              disabled={!title.trim()}
+              style={({ pressed }) => [
+                styles.submitButton,
+                { backgroundColor: theme.primary },
+                !title.trim() && styles.submitButtonDisabled,
+                pressed && styles.submitButtonPressed
+              ]}
+            >
+              <Text style={[styles.submitButtonText, { color: theme.background }]}>Start Your Journey</Text>
+            </Pressable>
+          </ScrollView>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
-  keyboardView: {
-    width: '100%',
+  sheetWrapper: {
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: '#fff',
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    maxHeight: Dimensions.get('window').height * 0.7,
+    flexGrow: 0,
   },
   inputGroup: {
     marginBottom: 24,

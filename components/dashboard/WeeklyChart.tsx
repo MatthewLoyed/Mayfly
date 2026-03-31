@@ -41,14 +41,14 @@ export function WeeklyChart({ data, colors }: WeeklyChartProps) {
                                         },
                                     ]}
                                 />
-                                <ThemedText style={styles.barValue} darkColor="#999">
+                                <ThemedText style={styles.barValue} lightColor={colors.textSecondary} darkColor={colors.textSecondary}>
                                     {dataPoint.count}
                                 </ThemedText>
                             </View>
-                            <ThemedText style={styles.barLabel} darkColor="#666">
+                            <ThemedText style={styles.barLabel} lightColor={colors.text} darkColor={colors.text}>
                                 {dayLabel}
                             </ThemedText>
-                            <ThemedText style={styles.barDayNumber} darkColor="#999">
+                            <ThemedText style={styles.barDayNumber} lightColor={colors.textSecondary} darkColor={colors.textSecondary}>
                                 {dayNumber}
                             </ThemedText>
                         </View>

@@ -79,14 +79,15 @@ const styles = StyleSheet.create({
     fontSize: 14, // Smaller font
   },
   label: {
-    fontSize: 9, // Smaller font
+    fontSize: 10,
     textTransform: "uppercase",
-    opacity: 0.6,
+    fontWeight: "600",
+    opacity: 0.9,
   },
   divider: {
     height: 1,
     width: 30, // Shorter divider
-    backgroundColor: "rgba(128,128,128,0.2)",
+    backgroundColor: "rgba(128,128,128,0.4)",
     marginVertical: 2,
   },
 });

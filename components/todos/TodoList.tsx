@@ -61,7 +61,7 @@ export function TodoList({
   const [selected, setSelected] = useState<Todo | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const emptyPulse = useRef(new Animated.Value(0.6)).current;
+  const emptyPulse = useRef(new Animated.Value(0.8)).current;
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "dark"];
 
@@ -79,7 +79,7 @@ export function TodoList({
             useNativeDriver: true,
           }),
           Animated.timing(emptyPulse, {
-            toValue: 0.6,
+            toValue: 0.8,
             duration: 800,
             easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
@@ -312,7 +312,9 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: "center",
-    opacity: 0.6,
+    opacity: 1,
+    fontSize: 18,
+    fontWeight: "500",
   },
   footer: {
     padding: 16,

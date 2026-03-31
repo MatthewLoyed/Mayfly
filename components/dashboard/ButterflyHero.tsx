@@ -106,10 +106,10 @@ export function ButterflyHero({ greeting, quote, completionRate }: ButterflyHero
                             entering={FadeIn.delay(300).duration(800)}
                             style={styles.quoteBlock}
                         >
-                            <ThemedText style={[styles.quoteText, { color: colors.textSecondary }]}>
+                            <ThemedText style={styles.quoteText}>
                                 "{quote.text}"
                             </ThemedText>
-                            <ThemedText style={[styles.quoteAuthor, { color: colors.icon }]}>
+                            <ThemedText style={[styles.quoteAuthor, { color: colors.textSecondary }]}>
                                 — {quote.author}
                             </ThemedText>
                         </Animated.View>
@@ -151,28 +151,31 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     greeting: {
-        fontSize: 32,
+        fontSize: 34,
         textAlign: 'center',
         fontFamily: 'System',
-        letterSpacing: -0.5,
+        letterSpacing: -1,
+        fontWeight: '800',
     },
     quoteBlock: {
-        marginTop: 12,
+        marginTop: 16,
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: 30,
     },
     quoteText: {
-        fontSize: 16,
+        fontSize: 15,
         textAlign: 'center',
-        fontStyle: 'italic',
-        lineHeight: 22,
         fontFamily: 'System',
+        fontStyle: 'italic',
+        lineHeight: 20,
+        opacity: 0.75,
     },
     quoteAuthor: {
-        marginTop: 4,
-        fontSize: 12,
+        marginTop: 6,
+        fontSize: 11,
         textTransform: 'uppercase',
-        letterSpacing: 1,
-        fontWeight: '600',
+        letterSpacing: 1.5,
+        fontWeight: '700',
+        opacity: 0.6,
     },
 });

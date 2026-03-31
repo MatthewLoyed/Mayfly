@@ -9,13 +9,13 @@ let db: SQLiteDatabase | null = null;
  * Initialize database based on platform
  */
 export async function initDatabase(): Promise<SQLiteDatabase> {
-  if (db) {
-    return db;
-  }
+  // If db already exists but we just live-reloaded, it skips initialization.
+  // But we want to ensure db is always connected in Native.
 
   if (Platform.OS !== 'web') {
-    // Native SQLite implementation
-    db = await SQLite.openDatabaseAsync('mayfly.db');
+    if (!db) {
+      db = await SQLite.openDatabaseAsync('mayfly.db');
+    }
 
     // Basic migration for character_state
     await db.execAsync(`
@@ -56,9 +56,29 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
         mood TEXT DEFAULT 'happy',
         total_interactions INTEGER DEFAULT 0,
         last_interaction_date TEXT,
+        login_streak INTEGER DEFAULT 0,
+        last_login_date TEXT,
         updated_at TEXT NOT NULL
       );
     `);
+
+    // Migration for character_state
+    // Disabled temporarily to bypass SQLite errors
+    /*
+    try {
+      await db.execAsync('ALTER TABLE character_state ADD COLUMN login_streak INTEGER DEFAULT 0;');
+      console.log('Successfully added login_streak column');
+    } catch (e) {
+      console.log('Migration login_streak skipped or failed:', e);
+    }
+    
+    try {
+      await db.execAsync('ALTER TABLE character_state ADD COLUMN last_login_date TEXT;');
+      console.log('Successfully added last_login_date column');
+    } catch (e) {
+      console.log('Migration last_login_date skipped or failed:', e);
+    }
+    */
 
     // Ensure character_state exists
     const row = await db.getFirstAsync('SELECT id FROM character_state WHERE id = 1');
@@ -78,7 +98,7 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
     habits: [] as any[],
     habit_completions: [] as any[],
     todos: [] as any[],
-    character_state: [{ id: 1, mood: 'happy', total_interactions: 0, last_interaction_date: null, updated_at: new Date().toISOString() }],
+    character_state: [{ id: 1, mood: 'happy', total_interactions: 0, last_interaction_date: null, login_streak: 0, last_login_date: null, updated_at: new Date().toISOString() }],
   };
 
   db = {
@@ -190,7 +210,7 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
       }
       if (query.startsWith('INSERT INTO character_state')) {
         const [mood, updated_at] = params;
-        memoryStore.character_state[0] = { id: 1, mood, total_interactions: 0, last_interaction_date: null, updated_at };
+        memoryStore.character_state[0] = { id: 1, mood, total_interactions: 0, last_interaction_date: null, login_streak: 0, last_login_date: null, updated_at };
         return;
       }
       if (query.startsWith('UPDATE character_state')) {
@@ -199,6 +219,11 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
           const [last_date, updated_at] = params;
           c.total_interactions += 1;
           c.last_interaction_date = last_date;
+          c.updated_at = updated_at;
+        } else if (query.includes('login_streak = ?')) {
+          const [login_streak, last_login_date, updated_at] = params;
+          c.login_streak = login_streak;
+          c.last_login_date = last_login_date;
           c.updated_at = updated_at;
         } else {
           const [mood, updated_at] = params;

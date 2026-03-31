@@ -12,7 +12,11 @@ import {
   getWeeklyStats,
 } from "@/services/habit-service";
 import { generateMessage } from "@/services/message-generator";
-import { getPriorityTodos, getTodoStats } from "@/services/todo-service";
+import {
+  getAllTodos,
+  getTodoStats,
+} from "@/services/todo-service";
+import { recordLoginAndGetStreak } from '@/services/character-service';
 import { eachDayOfInterval, format, subDays } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -24,13 +28,14 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeInUp, ZoomIn } from "react-native-reanimated";
+import { Flame, Sprout, Target } from "lucide-react-native";
 import { BackgroundEnvironment } from "@/components/ui/BackgroundEnvironment";
 import { ButterflyHero } from "../../components/dashboard/ButterflyHero";
 import { GrowthForestChart } from "../../components/dashboard/GrowthForestChart";
 import { LivingProgressBar } from "../../components/dashboard/LivingProgressBar";
-import { PebbleCard } from "../../components/dashboard/PebbleCard";
 import { RecapSection } from "../../components/dashboard/RecapSection";
+import { TactileButton, HapticType } from "@/components/ui/TactileButton";
 import { getRandomQuote } from "../../constants/quotes";
 import { type Habit } from "@/types/habit";
 import { toggleTodo } from "@/services/todo-service";
@@ -55,13 +60,14 @@ export default function DashboardScreen() {
   const [priorityTodos, setPriorityTodos] = useState<
     { id: string; text: string; completed: boolean }[]
   >([]);
-  const [nextHabit, setNextHabit] = useState<Habit | undefined>();
+  const [incompleteHabits, setIncompleteHabits] = useState<Habit[]>([]);
   const [quote, setQuote] = useState<{ text: string; author: string }>(getRandomQuote());
   const [greetingMessage, setGreetingMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [weeklyData, setWeeklyData] = useState<WeeklyDataPoint[]>([]);
   const [longestStreak, setLongestStreak] = useState(0);
   const [totalCompletions, setTotalCompletions] = useState(0);
+  const [loginStreak, setLoginStreak] = useState(0);
   const [todoStats, setTodoStats] = useState({
     total: 0,
     completed: 0,
@@ -85,9 +91,18 @@ export default function DashboardScreen() {
       setLongestStreak(await getLongestStreak());
       setTotalCompletions(await getTotalCompletions());
 
-      // Find next habit (first incomplete)
-      const firstIncomplete = habits.find(h => !h.completedToday);
-      setNextHabit(firstIncomplete);
+      // Get login streak safely
+      try {
+        const streak = await recordLoginAndGetStreak();
+        setLoginStreak(streak);
+      } catch (err) {
+        console.error("Failed to get login streak:", err);
+        setLoginStreak(0);
+      }
+
+      // Find incomplete habits (up to 3)
+      const incomplete = habits.filter(h => !h.completedToday).slice(0, 3);
+      setIncompleteHabits(incomplete);
 
       // Load weekly data
       const weeklyStats: { date: string; count: number }[] =
@@ -104,9 +119,20 @@ export default function DashboardScreen() {
       }));
       setWeeklyData(fullWeekData);
 
-      // Load priority todos
-      const priorities = await getPriorityTodos();
-      setPriorityTodos(priorities.map((t) => ({ id: t.id, text: t.text, completed: t.completed })));
+      // Load priority todos (top 3 based on priority flag and due date)
+      const allIncompleteTodos = await getAllTodos(false);
+      // Sort: Priority first, then closest due date, then created earliest
+      const sortedTodos = allIncompleteTodos.sort((a, b) => {
+        if (a.priority !== b.priority) return a.priority ? -1 : 1;
+        if (a.dueAt && b.dueAt) {
+          return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+        }
+        if (a.dueAt) return -1;
+        if (b.dueAt) return 1;
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+      const topTodos = sortedTodos.slice(0, 3);
+      setPriorityTodos(topTodos.map((t) => ({ id: t.id, text: t.text, completed: t.completed })));
 
       // Load todo stats
       const stats = await getTodoStats();
@@ -179,54 +205,126 @@ export default function DashboardScreen() {
         {/* Recap Section (PRIORITY) */}
         <RecapSection
           priorityTodos={priorityTodos}
-          nextHabit={nextHabit ? {
-            id: nextHabit.id,
-            name: nextHabit.name,
-            color: nextHabit.color || colors.primary,
-          } : undefined}
+          incompleteHabits={incompleteHabits.map(h => ({
+            id: h.id,
+            name: h.name,
+            color: h.color || colors.primary,
+            icon: h.icon
+          }))}
+          loginStreak={loginStreak}
           onToggleTodo={handleToggleTodo}
           onCompleteHabit={handleCompleteHabit}
           onViewAllTodos={() => router.push('/todos')}
           onViewGarden={() => router.push('/garden')}
         />
 
-        {/* Growth Stats - Lower Priority */}
+        {/* Growth Stats - Premium Redesign */}
         <Animated.View
-          entering={FadeInDown.delay(400).duration(800).springify()}
-          style={[styles.section, { padding: isSmallScreen ? 16 : 24, marginTop: 24 }]}
+          entering={FadeInDown.delay(500).duration(800).springify()}
+          style={[styles.section, { padding: isSmallScreen ? 16 : 24, marginTop: 12 }]}
         >
           <ThemedText type="titleRounded" style={[styles.sectionTitle, { color: colors.text }]}>
             Ecosystem Growth
           </ThemedText>
 
-          <View style={styles.grid}>
-            <PebbleCard
-              label="Habits Planted"
-              value={`${habitsCompleted}/${totalHabits}`}
-              color={colors.primary}
-              style={{ flexBasis: '48%' }}
-              onPress={() => router.push('/garden')}
-            />
-            <PebbleCard
-              label="Daily Streak"
-              value={longestStreak.toString()}
-              color={colors.streak}
-              style={{ flexBasis: '48%' }}
-            />
-          </View>
+    <View style={styles.statsLayout}>
+            
+      {/* Left Box: Daily Streak (Hero Metric) */}
+      <TactileButton 
+        style={[styles.heroStatBox, { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '20' }]}
+        hapticType={HapticType.Selection}
+        scaleValue={0.97}
+      >
+         <LinearGradient
+            colors={[colors.streak + '20', 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+        />
+        <View style={[styles.iconFloat, { backgroundColor: colors.streak + '25' }]}>
+          <Flame size={24} color={colors.streak} />
+        </View>
+        <View style={styles.heroTextContent}>
+          <Animated.Text 
+            entering={ZoomIn.delay(700).springify()} 
+            style={[styles.heroNumber, { color: colors.text }]}
+            adjustsFontSizeToFit
+            numberOfLines={1}
+          >
+            {longestStreak}
+          </Animated.Text>
+          <ThemedText style={[styles.statTitle, { color: colors.icon }]}>Best Streak</ThemedText>
+        </View>
+      </TactileButton>
 
-          {/* Statistics Section */}
-          <View style={[styles.grid, { marginTop: 16 }]}>
-            <PebbleCard
-              label="Total Completions"
-              value={totalCompletions.toString()}
-              color={colors.habitComplete}
-              style={{ flexBasis: '100%' }}
-            />
+      {/* Right Column: Stacked Nurtured / Completed */}
+      <View style={styles.stackedStats}>
+        <TactileButton 
+          style={[styles.miniStatBox, { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '20' }]}
+          hapticType={HapticType.Selection}
+          scaleValue={0.95}
+          onPress={() => router.push('/garden')}
+        >
+            <LinearGradient
+              colors={[colors.primary + '15', 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+          />
+          <View style={styles.miniHeader}>
+            <View style={[styles.miniIconBg, { backgroundColor: colors.primary + '25' }]}>
+              <Sprout size={16} color={colors.primary} />
+            </View>
           </View>
+          <View style={styles.miniTextContent}>
+            <Animated.Text 
+              entering={ZoomIn.delay(800).springify()} 
+              style={[styles.miniNumber, { color: colors.text }]}
+              adjustsFontSizeToFit
+              numberOfLines={1}
+            >
+              {habitsCompleted}/{totalHabits}
+            </Animated.Text>
+            <ThemedText style={[styles.miniLabel, { color: colors.icon }]} numberOfLines={1}>Planted</ThemedText>
+          </View>
+        </TactileButton>
+
+        <TactileButton 
+          style={[styles.miniStatBox, { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '20' }]}
+          hapticType={HapticType.Selection}
+          scaleValue={0.95}
+        >
+            <LinearGradient
+              colors={[colors.habitComplete + '15', 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+          />
+          <View style={styles.miniHeader}>
+            <View style={[styles.miniIconBg, { backgroundColor: colors.habitComplete + '25' }]}>
+              <Target size={16} color={colors.habitComplete} />
+            </View>
+          </View>
+          <View style={styles.miniTextContent}>
+            <Animated.Text 
+              entering={ZoomIn.delay(900).springify()} 
+              style={[styles.miniNumber, { color: colors.text }]}
+              adjustsFontSizeToFit
+              numberOfLines={1}
+            >
+              {totalCompletions}
+            </Animated.Text>
+            <ThemedText style={[styles.miniLabel, { color: colors.icon }]} numberOfLines={1}>Harvests</ThemedText>
+          </View>
+        </TactileButton>
+      </View>
+
+    </View>
 
           {/* Growth Forest Chart */}
-          <GrowthForestChart data={weeklyData} colors={colors} />
+          <View style={{ marginTop: 24 }}>
+            <GrowthForestChart data={weeklyData} colors={colors} />
+          </View>
 
           {/* Todo Completion - Living Progress */}
           {todoStats.total > 0 && (
@@ -280,11 +378,91 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 22,
   },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  statsLayout: {
+    flexDirection: 'row',
     gap: 16,
-    marginBottom: 16,
+    width: '100%',
+    height: 180, // Fixed height for symmetric grid
+  },
+  heroStatBox: {
+    flex: 1.1, // Takes up slightly more space visually
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 20,
+    justifyContent: 'space-between',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    overflow: 'hidden',
+  },
+  iconFloat: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroTextContent: {
+    justifyContent: 'flex-end',
+  },
+  statTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  heroNumber: {
+    fontSize: 42,
+    fontFamily: 'System',
+    fontWeight: '800',
+  },
+  stackedStats: {
+    flex: 1,
+    gap: 12,
+  },
+  miniStatBox: {
+    flex: 1,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 12,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    overflow: 'hidden',
+  },
+  miniHeader: {
+    marginBottom: 2,
+  },
+  miniIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  miniTextContent: {
+    justifyContent: 'center',
+    width: '100%',
+  },
+  miniNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'System',
+  },
+  miniLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   swipeHint: {
     alignItems: 'center',
