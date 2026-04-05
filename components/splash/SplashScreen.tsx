@@ -135,6 +135,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 42,
     fontWeight: '800',
+    lineHeight: 52,
     marginBottom: 8,
     color: Colors.dark.tint,
   },
