@@ -3,6 +3,7 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { type Habit } from "@/types/habit";
 import { Ionicons } from "@expo/vector-icons";
+import { AppIcons } from "@/constants/icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -36,7 +37,7 @@ export function HabitStatsCard({
     >
       <View style={styles.content}>
         <View style={styles.row}>
-          <Ionicons name="flame" size={12} color={color} />
+          <Ionicons name={AppIcons.flame} size={12} color={color} />
           <ThemedText style={[styles.stat, { color }]}>
             {habit.streak}
           </ThemedText>
@@ -47,7 +48,7 @@ export function HabitStatsCard({
 
         {/* Placeholder for "Best" or "Completion Rate" */}
         <View style={styles.row}>
-          <Ionicons name="trophy" size={12} color={colors.text} />
+          <Ionicons name={AppIcons.trophy} size={12} color={colors.text} />
           <ThemedText style={styles.stat}>--</ThemedText>
         </View>
         <ThemedText style={styles.label}>Best</ThemedText>

@@ -25,88 +25,29 @@ import { MayflyVisual } from './MayflyVisual';
 import { LogSessionDialog } from './LogSessionDialog';
 import type { Pursuit, Session } from './types';
 
-const mockPursuits: Pursuit[] = [
-  {
-    id: "1",
-    title: "Watercolor Painting",
-    category: "Creative",
-    startDate: "2026-01-15",
-    sessions: [
-      { date: "2026-01-15", duration: 45, note: "Practiced basic washes" },
-      { date: "2026-01-18", duration: 60, note: "Landscape study" },
-      { date: "2026-01-22", duration: 30, note: "Color mixing experiments" },
-      { date: "2026-02-01", duration: 75, note: "First complete piece" },
-      { date: "2026-02-08", duration: 90, note: "Portrait attempt" },
-      { date: "2026-02-15", duration: 60, note: "Botanical studies" },
-      { date: "2026-03-01", duration: 120, note: "Large canvas project" },
-      { date: "2026-03-10", duration: 45, note: "Abstract experiments" },
-      { date: "2026-03-20", duration: 90, note: "Gallery-worthy piece" },
-    ],
-    totalSessions: 9,
-    stage: 2,
-    color: "#E8B4F5",
-  },
-  {
-    id: "2",
-    title: "Spanish Conversation",
-    category: "Language",
-    startDate: "2026-02-01",
-    sessions: [
-      { date: "2026-02-01", duration: 30, note: "Basic greetings" },
-      { date: "2026-02-03", duration: 30, note: "Numbers and colors" },
-      { date: "2026-02-06", duration: 45, note: "Present tense verbs" },
-      { date: "2026-02-10", duration: 30, note: "Conversation practice" },
-      { date: "2026-03-15", duration: 60, note: "Video call with tutor" },
-    ],
-    totalSessions: 5,
-    stage: 1,
-    color: "#FFD4A3",
-  },
-  {
-    id: "3",
-    title: "Morning Meditation",
-    category: "Mindfulness",
-    startDate: "2026-03-01",
-    sessions: [
-      { date: "2026-03-01", duration: 10, note: "Breath focus" },
-      { date: "2026-03-02", duration: 15, note: "Body scan" },
-      { date: "2026-03-05", duration: 10, note: "Loving-kindness" },
-    ],
-    totalSessions: 3,
-    stage: 0,
-    color: "#B4E8D4",
-  },
-  {
-    id: "4",
-    title: "Guitar Practice",
-    category: "Music",
-    startDate: "2025-11-10",
-    sessions: Array.from({ length: 15 }, (_, i) => ({
-      date: new Date(2025, 10, 10 + i * 3).toISOString().split("T")[0],
-      duration: 45,
-      note: `Practice session ${i + 1}`,
-    })),
-    totalSessions: 15,
-    stage: 3,
-    color: "#C4D4FF",
-  },
-];
 
 interface PursuitDetailProps {
   pursuitId: string;
+  pursuits: Pursuit[];
   onBack: () => void;
+  onUpdatePursuit: (pursuit: Pursuit) => void;
 }
 
-export function PursuitDetail({ pursuitId, onBack }: PursuitDetailProps) {
+export function PursuitDetail({ pursuitId, pursuits, onBack, onUpdatePursuit }: PursuitDetailProps) {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'dark'];
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   
-  const pursuit = mockPursuits.find((p) => p.id === pursuitId);
+  const pursuit = pursuits.find((p) => p.id === pursuitId);
   const [sessions, setSessions] = useState<Session[]>(pursuit?.sessions || []);
 
+  React.useEffect(() => {
+    if (!pursuit) {
+      onBack();
+    }
+  }, [pursuit, onBack]);
+
   if (!pursuit) {
-    onBack();
     return null;
   }
 
@@ -132,7 +73,18 @@ export function PursuitDetail({ pursuitId, onBack }: PursuitDetailProps) {
       ...session,
       date: new Date().toISOString().split("T")[0],
     };
-    setSessions([...sessions, newSession]);
+    const updatedSessions = [...sessions, newSession];
+    setSessions(updatedSessions);
+    
+    // Also update parent state
+    if (pursuit) {
+      onUpdatePursuit({
+        ...pursuit,
+        sessions: updatedSessions,
+        totalSessions: updatedSessions.length,
+      });
+    }
+    
     setIsLogDialogOpen(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };

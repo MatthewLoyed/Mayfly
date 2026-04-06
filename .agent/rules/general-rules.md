@@ -51,3 +51,8 @@ Mayfly is a premium, high-fidelity productivity app. Every interaction should fe
     - Add `maxHeight: '85%'` to the sheet/card style to prevent overflowing on small devices.
     - Use absolute safe area insets (e.g., `useSafeAreaInsets`) or `Platform.OS` checks for consistent bottom padding.
 - **Android Configuration**: Ensure `softwareKeyboardLayoutMode: resize` is set in `app.json` under the `android` key.
+
+### 7. Centralized Icon Safety
+- When adding an **Ionicons** icon, you MUST add it to `constants/icons.ts` first using the `IoniconsName` type constraint.
+- Never pass raw icon name strings directly to `Ionicons` components.
+- Valid icon names can be verified at [https://ionic.io/ionicons](https://ionic.io/ionicons) — when in doubt use the `-outline` variant.

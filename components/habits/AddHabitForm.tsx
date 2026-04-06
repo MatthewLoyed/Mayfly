@@ -4,6 +4,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { HapticType, TactileButton } from '@/components/ui/TactileButton';
 import { Ionicons } from "@expo/vector-icons";
+import { AppIcons } from '@/constants/icons';
 import React, { useState } from 'react';
 import { Keyboard, StyleSheet, TextInput, View, ScrollView, Platform } from 'react-native';
 import Animated, { LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -34,15 +35,18 @@ export function AddHabitForm({ onSubmit, onCancel }: AddHabitFormProps) {
   return (
     <Animated.View 
       layout={LinearTransition} 
-      entering={FadeIn.duration(300)}
-      exiting={FadeOut.duration(200)}
       style={[styles.container, { backgroundColor: colors.background, borderRadius: 16, overflow: 'hidden' }]}
     >
-      <ScrollView
-         keyboardShouldPersistTaps="handled"
-         showsVerticalScrollIndicator={false}
-         bounces={false}
+      <Animated.View 
+        entering={FadeIn.duration(300)}
+        exiting={FadeOut.duration(200)}
+        style={{ flex: 1 }}
       >
+        <ScrollView
+           keyboardShouldPersistTaps="handled"
+           showsVerticalScrollIndicator={false}
+           bounces={false}
+        >
         <ThemedView style={{ backgroundColor: 'transparent' }}>
         <View style={styles.inputContainer}>
           <TextInput
@@ -71,7 +75,7 @@ export function AddHabitForm({ onSubmit, onCancel }: AddHabitFormProps) {
         <Animated.View layout={LinearTransition} style={{ marginBottom: 16 }}>
           <ThemedText style={{ fontWeight: '600', marginBottom: 8 }}>Icon:</ThemedText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {['water', 'barbell', 'book', 'moon', 'briefcase', 'leaf', 'alarm', 'flame'].map((iconName) => (
+            {[AppIcons.water, AppIcons.barbell, AppIcons.book, AppIcons.moon, AppIcons.briefcase, AppIcons.leaf, AppIcons.alarm, AppIcons.flame].map((iconName) => (
               <TactileButton
                 key={iconName}
                 onPress={() => setIcon(iconName)}
@@ -98,7 +102,7 @@ export function AddHabitForm({ onSubmit, onCancel }: AddHabitFormProps) {
               }}
               hapticType={HapticType.Selection}
             >
-              <Ionicons name="close" size={20} color={colors.text} />
+              <Ionicons name={AppIcons.close} size={20} color={colors.text} />
             </TactileButton>
           </View>
         </Animated.View>
@@ -129,6 +133,7 @@ export function AddHabitForm({ onSubmit, onCancel }: AddHabitFormProps) {
         </Animated.View>
       </ThemedView>
     </ScrollView>
+    </Animated.View>
     </Animated.View>
   );
 }

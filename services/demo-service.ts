@@ -2,6 +2,7 @@ import { format, subDays } from 'date-fns';
 import { getDatabase } from './database';
 import { createHabit, getAllHabits } from './habit-service';
 import { createTodo, getAllTodos } from './todo-service';
+import { AppIcons } from '@/constants/icons';
 
 /**
  * Seed demo data for Growth Forest (last 7 days of completions) and Todos
@@ -20,8 +21,17 @@ export async function seedDemoData(): Promise<void> {
   )) as { count: number } | undefined;
 
   if (existingCompletions && existingCompletions.count > 5) {
+    // Hotfix: Ensure existing icons are valid (migrating from hallucinated names)
+    await db.execAsync(`
+      UPDATE habits SET icon = '${AppIcons.walk}' WHERE icon = 'footprints';
+      UPDATE habits SET icon = '${AppIcons.water}' WHERE icon = 'droplet';
+      UPDATE habits SET icon = '${AppIcons.barbell}' WHERE icon = 'dumbbell';
+      UPDATE habits SET icon = '${AppIcons.book}' WHERE icon = 'book-open';
+      UPDATE habits SET icon = '${AppIcons.flame}' WHERE icon = 'flame-sharp';
+    `);
+    
     // Already has enough data for a demo
-    console.log('Skipping seed: Data already exists');
+    console.log('Skipping seed: Data already exists, icons hotfixed');
     return;
   }
 
@@ -30,10 +40,10 @@ export async function seedDemoData(): Promise<void> {
   // 2. Ensure we have at least 4 habits
   let habits = await getAllHabits();
   const demoHabitNames = [
-    { name: 'Morning Meditation', color: '#4CAF50', icon: 'leaf' },
-    { name: 'Read 10 Pages', color: '#2196F3', icon: 'book' },
-    { name: 'Evening Walk', color: '#FF9800', icon: 'footprints' },
-    { name: 'Drink 2L Water', color: '#03A9F4', icon: 'droplet' }
+    { name: 'Morning Meditation', color: '#4CAF50', icon: AppIcons.leaf },
+    { name: 'Read 10 Pages', color: '#2196F3', icon: AppIcons.book },
+    { name: 'Evening Walk', color: '#FF9800', icon: AppIcons.walk },
+    { name: 'Drink 2L Water', color: '#03A9F4', icon: AppIcons.water }
   ];
 
   if (habits.length < 3) {

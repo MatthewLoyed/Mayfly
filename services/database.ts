@@ -209,6 +209,28 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
           c.mood = mood;
           c.updated_at = updated_at;
         }
+      } else if (query.startsWith('DELETE FROM habits')) {
+        memoryStore.habits = [];
+        memoryStore.habit_completions = [];
+      } else if (query.startsWith('DELETE FROM habit_completions')) {
+        memoryStore.habit_completions = [];
+      } else if (query.startsWith('DELETE FROM todos')) {
+        memoryStore.todos = [];
+      } else if (query.startsWith('DELETE FROM character_state')) {
+        memoryStore.character_state = [];
+      } else if (query.startsWith('INSERT INTO character_state')) {
+        const [mood, updated_at] = params;
+        memoryStore.character_state = [{ 
+          id: 1, 
+          mood, 
+          total_interactions: 0, 
+          last_interaction_date: null, 
+          login_streak: 0, 
+          last_login_date: null, 
+          updated_at 
+        }];
+      } else if (query.includes('FROM habits') && query.includes('DELETE')) {
+        // Handle specific delete if needed
       }
       persist();
     },
@@ -252,6 +274,10 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
         let rows = [...memoryStore.todos];
         if (query.includes('WHERE completed = 0')) rows = rows.filter((t: any) => t.completed === 0);
         if (query.includes('WHERE priority = 1 AND completed = 0')) rows = rows.filter((t: any) => t.priority === 1 && t.completed === 0);
+        
+        // Map priority back to number for web compatibility with service logic
+        rows = rows.map(t => ({ ...t, priority: t.priority ? 1 : 0 }));
+        
         if (query.includes('ORDER BY priority DESC, created_at DESC')) rows.sort((a: any, b: any) => (b.priority - a.priority) || (b.created_at.localeCompare(a.created_at)));
         if (query.includes('ORDER BY created_at ASC')) rows.sort((a: any, b: any) => a.created_at.localeCompare(b.created_at));
         if (query.includes('LIMIT 3')) rows = rows.slice(0, 3);

@@ -7,6 +7,7 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { type Habit } from "@/types/habit";
 import { Ionicons } from "@expo/vector-icons";
+import { AppIcons } from "@/constants/icons";
 import React, { useState } from "react";
 import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -170,7 +171,7 @@ export function ButterflyHabit({
                       />
                     ) : isComplete ? (
                       <Ionicons
-                        name="checkmark"
+                        name={AppIcons.checkmark}
                         size={size * 0.5}
                         color={iconColor}
                       />
@@ -219,7 +220,7 @@ export function ButterflyHabit({
               style={styles.deleteBadge}
               hapticType={HapticType.ImpactMedium}
             >
-              <Ionicons name="close" size={16} color="#FFF" />
+              <Ionicons name={AppIcons.close} size={16} color="#FFF" />
             </TactileButton>
           </Animated.View>
         )}

@@ -8,10 +8,10 @@ import { getDatabase } from '@/services/database';
 import { getAllHabits } from '@/services/habit-service';
 import { getAllTodos } from '@/services/todo-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 /**
@@ -23,14 +23,24 @@ export default function SettingsScreen() {
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportData = async () => {
+    if (isExporting) return;
+    
     try {
       setIsExporting(true);
+      console.log('[Export] Starting data export...');
+      
+      // Ensure database is initialized
       await getDatabase();
 
-      // Get all data
-      const habits = await getAllHabits();
-      const todos = await getAllTodos(true);
-      const characterState = await getCharacterState();
+      // Get all data in parallel for efficiency
+      console.log('[Export] Fetching data from services...');
+      const [habits, todos, characterState] = await Promise.all([
+        getAllHabits(),
+        getAllTodos(true),
+        getCharacterState()
+      ]);
+
+      console.log(`[Export] Data retrieved: ${habits.length} habits, ${todos.length} todos.`);
 
       const exportData = {
         version: '1.0.0',
@@ -41,37 +51,72 @@ export default function SettingsScreen() {
       };
 
       const jsonString = JSON.stringify(exportData, null, 2);
-      const fileName = `mayfly-backup-${new Date().toISOString().split('T')[0]}.json`;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `mayfly-backup-${timestamp}.json`;
 
       if (Platform.OS === 'web') {
-        // Web: download file
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        Alert.alert('Success', 'Data exported successfully!');
+        processWebExport(jsonString, fileName);
       } else {
-        // Mobile: save and share
-        const docDir = (FileSystem as any).documentDirectory;
-        const fileUri = `${docDir}${fileName}`;
-        await FileSystem.writeAsStringAsync(fileUri, jsonString);
-
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(fileUri);
-        } else {
-          Alert.alert('Export Complete', `File saved to: ${fileUri}`);
-        }
+        await processMobileExport(jsonString, fileName);
       }
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      Alert.alert('Error', 'Failed to export data. Please try again.');
+    } catch (error: any) {
+      console.error('[Export] Critical Error:', error);
+      Alert.alert(
+        'Export Failed',
+        error?.message || 'An unexpected error occurred during export. Please try again.'
+      );
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const processWebExport = (jsonString: string, fileName: string) => {
+    try {
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      Alert.alert('Success', 'Data export initiated successfully.');
+    } catch (e: any) {
+      console.error('[Export] Web flow failed:', e);
+      Alert.alert('Error', 'Failed to generate download on web browser.');
+    }
+  };
+
+  const processMobileExport = async (jsonString: string, fileName: string) => {
+    try {
+      // In SDK 54, we use the new File and Paths API
+      const docDir = Paths.document;
+      if (!docDir) {
+        throw new Error('FileSystem document storage not available');
+      }
+
+      const backupFile = new File(docDir, fileName);
+      console.log(`[Export] Writing file to: ${backupFile.uri}`);
+      
+      // write() is synchronous in the new API but we wrap it for safety
+      backupFile.write(jsonString);
+
+      console.log('[Export] Checking sharing availability...');
+      const isSharingAvailable = await Sharing.isAvailableAsync();
+      
+      if (isSharingAvailable) {
+        await Sharing.shareAsync(backupFile.uri, {
+          mimeType: 'application/json',
+          dialogTitle: 'Export Mayfly Data',
+          UTI: 'public.json',
+        });
+      } else {
+        Alert.alert('Export Complete', `Data saved locally to: ${backupFile.uri}`);
+      }
+    } catch (e: any) {
+      console.error('[Export] Mobile flow failed:', e);
+      throw e;
     }
   };
 
@@ -123,6 +168,7 @@ export default function SettingsScreen() {
     onValueChange,
     showArrow = false,
     destructive = false,
+    loading = false,
   }: {
     icon: string;
     title: string;
@@ -132,15 +178,20 @@ export default function SettingsScreen() {
     onValueChange?: (value: boolean) => void;
     showArrow?: boolean;
     destructive?: boolean;
+    loading?: boolean;
   }) => (
     <TouchableOpacity
       style={[styles.settingItem, destructive && styles.destructiveItem]}
       onPress={onPress}
-      disabled={!onPress && !onValueChange}
+      disabled={(onPress === undefined && onValueChange === undefined) || loading}
       activeOpacity={0.7}
     >
       <View style={styles.settingIcon}>
-        <IconSymbol name={icon as any} size={24} color={destructive ? colors.warning : colors.icon} />
+        {loading ? (
+          <ActivityIndicator size="small" color={destructive ? colors.warning : colors.primary} />
+        ) : (
+          <IconSymbol name={icon as any} size={24} color={destructive ? colors.warning : colors.icon} />
+        )}
       </View>
       <View style={styles.settingContent}>
         <ThemedText type="defaultSemiBold" style={[styles.settingTitle, destructive && styles.destructiveText]}>
@@ -198,6 +249,7 @@ export default function SettingsScreen() {
             title="Export Data"
             subtitle="Download a backup of all your data"
             onPress={handleExportData}
+            loading={isExporting}
             showArrow
           />
 
