@@ -20,7 +20,8 @@ import { recordLoginAndGetStreak } from '@/services/character-service';
 import { eachDayOfInterval, format, subDays } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useTodos } from "@/contexts/TodoContext";
 import {
   ScrollView,
   StyleSheet,
@@ -40,6 +41,7 @@ import { getRandomQuote } from "../../constants/quotes";
 import { type Habit } from "@/types/habit";
 import { toggleTodo } from "@/services/todo-service";
 import { completeHabit } from "@/services/habit-service";
+import { seedDemoData } from '@/services/demo-service';
 
 interface WeeklyDataPoint {
   date: string;
@@ -55,25 +57,33 @@ export default function DashboardScreen() {
   const colors = Colors[colorScheme ?? "light"];
   const { width } = useWindowDimensions();
 
+  const { todos, stats: todoStats, toggleTodo, isLoading: isTodosLoading } = useTodos();
   const [habitsCompleted, setHabitsCompleted] = useState(0);
   const [totalHabits, setTotalHabits] = useState(0);
-  const [priorityTodos, setPriorityTodos] = useState<
-    { id: string; text: string; completed: boolean }[]
-  >([]);
   const [incompleteHabits, setIncompleteHabits] = useState<Habit[]>([]);
   const [quote, setQuote] = useState<{ text: string; author: string }>(getRandomQuote());
   const [greetingMessage, setGreetingMessage] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isHabitsLoading, setIsHabitsLoading] = useState(true);
   const [weeklyData, setWeeklyData] = useState<WeeklyDataPoint[]>([]);
   const [longestStreak, setLongestStreak] = useState(0);
   const [totalCompletions, setTotalCompletions] = useState(0);
   const [loginStreak, setLoginStreak] = useState(0);
-  const [todoStats, setTodoStats] = useState({
-    total: 0,
-    completed: 0,
-    pending: 0,
-    completionRate: 0,
-  });
+
+  const priorityTodos = useMemo(() => {
+    return todos
+      .filter(t => !t.completed)
+      .sort((a, b) => {
+        if (a.priority !== b.priority) return a.priority ? -1 : 1;
+        if (a.dueAt && b.dueAt) {
+          return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+        }
+        if (a.dueAt) return -1;
+        if (b.dueAt) return 1;
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      })
+      .slice(0, 3)
+      .map(t => ({ id: t.id, text: t.text, completed: t.completed }));
+  }, [todos]);
 
   useEffect(() => {
     loadDashboardData();
@@ -82,6 +92,9 @@ export default function DashboardScreen() {
   const loadDashboardData = async () => {
     try {
       await getDatabase();
+
+      // Seed demo data if needed
+      await seedDemoData();
 
       // Load habits
       const habits = await getAllHabits();
@@ -119,25 +132,6 @@ export default function DashboardScreen() {
       }));
       setWeeklyData(fullWeekData);
 
-      // Load priority todos (top 3 based on priority flag and due date)
-      const allIncompleteTodos = await getAllTodos(false);
-      // Sort: Priority first, then closest due date, then created earliest
-      const sortedTodos = allIncompleteTodos.sort((a, b) => {
-        if (a.priority !== b.priority) return a.priority ? -1 : 1;
-        if (a.dueAt && b.dueAt) {
-          return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
-        }
-        if (a.dueAt) return -1;
-        if (b.dueAt) return 1;
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      });
-      const topTodos = sortedTodos.slice(0, 3);
-      setPriorityTodos(topTodos.map((t) => ({ id: t.id, text: t.text, completed: t.completed })));
-
-      // Load todo stats
-      const stats = await getTodoStats();
-      setTodoStats(stats);
-
       // Update quote
       setQuote(getRandomQuote());
 
@@ -147,11 +141,11 @@ export default function DashboardScreen() {
     } catch (error) {
       console.error("Error loading dashboard:", error);
     } finally {
-      setIsLoading(false);
+      setIsHabitsLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (isHabitsLoading || isTodosLoading) {
     return (
       <ThemedView style={styles.container}>
         <ThemedText>Loading...</ThemedText>
@@ -165,7 +159,6 @@ export default function DashboardScreen() {
   const handleToggleTodo = async (id: string) => {
     try {
       await toggleTodo(id);
-      loadDashboardData();
     } catch (error) {
       console.error("Error toggling todo:", error);
     }

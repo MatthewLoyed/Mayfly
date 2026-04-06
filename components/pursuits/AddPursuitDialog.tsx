@@ -8,9 +8,11 @@ import {
   Modal, 
   Dimensions,
   KeyboardAvoidingView,
-  Platform,
-  ScrollView
+  ScrollView,
+  Platform
 } from 'react-native';
+
+
 import Animated, { 
   FadeIn, 
   FadeOut, 
@@ -68,21 +70,19 @@ export function AddPursuitDialog({ isOpen, onClose, onAdd }: AddPursuitDialogPro
       visible={isOpen}
       animationType="none"
       onRequestClose={onClose}
-      statusBarTranslucent
     >
-      {/* Full-screen backdrop — does NOT move with keyboard */}
+      {/* Backdrop */}
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
         <Animated.View 
           entering={FadeIn.duration(200)} 
           exiting={FadeOut.duration(200)} 
-          style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.4)' }]} 
+          style={styles.backdrop} 
         />
       </Pressable>
 
-      {/* KeyboardAvoidingView wraps ONLY the bottom sheet */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.sheetWrapper}
+        style={styles.sheetContainer}
       >
         <Animated.View 
           entering={SlideInDown.duration(350)}
@@ -98,11 +98,12 @@ export function AddPursuitDialog({ isOpen, onClose, onAdd }: AddPursuitDialogPro
               <X size={20} color={theme.icon} />
             </Pressable>
           </View>
-
+          
           <ScrollView
-            style={styles.content}
+            bounces={false}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.textSecondary }]}>What do you want to pursue?</Text>
@@ -112,7 +113,6 @@ export function AddPursuitDialog({ isOpen, onClose, onAdd }: AddPursuitDialogPro
                 placeholder="e.g., Learn Piano, Morning Yoga..."
                 placeholderTextColor={theme.icon}
                 style={[styles.input, { borderColor: theme.habitStroke + '33', color: theme.text }]}
-                autoFocus
               />
             </View>
 
@@ -161,15 +161,19 @@ export function AddPursuitDialog({ isOpen, onClose, onAdd }: AddPursuitDialogPro
           </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
-    </Modal>
+  </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  sheetWrapper: {
+  sheetContainer: {
     flex: 1,
     justifyContent: 'flex-end',
   },
@@ -179,6 +183,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     padding: 24,
     paddingBottom: Platform.OS === 'ios' ? 48 : 32,
+    maxHeight: '85%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.1,
@@ -204,8 +209,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: {
-    flexGrow: 0,
+  scrollContent: {
+    paddingBottom: 8,
   },
   inputGroup: {
     marginBottom: 24,

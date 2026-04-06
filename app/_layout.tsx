@@ -1,6 +1,7 @@
 import { AppSplashScreen } from "@/components/splash/SplashScreen";
 import { Colors } from "@/constants/theme";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { TodoProvider } from "@/contexts/TodoContext";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -16,24 +17,26 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <StatusBar style="light" />
-      <GestureHandlerRootView style={styles.container}>
-        {!isSplashReady && (
-          <View style={StyleSheet.absoluteFill}>
-            <AppSplashScreen onFinish={handleSplashFinish} />
-          </View>
-        )}
-        {isSplashReady && (
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: Colors.dark.background,
-              },
-            }}
-          />
-        )}
-      </GestureHandlerRootView>
+      <TodoProvider>
+        <StatusBar style="light" />
+        <GestureHandlerRootView style={styles.container}>
+          {!isSplashReady && (
+            <View style={StyleSheet.absoluteFill}>
+              <AppSplashScreen onFinish={handleSplashFinish} />
+            </View>
+          )}
+          {isSplashReady && (
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: Colors.dark.background,
+                },
+              }}
+            />
+          )}
+        </GestureHandlerRootView>
+      </TodoProvider>
     </ThemeProvider>
   );
 }

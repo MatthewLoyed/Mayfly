@@ -27,8 +27,14 @@ export default function TabLayout() {
           backgroundColor: colors.cardBackground,
           borderTopColor: colors.habitStroke + '22',
           elevation: 0,
-          height: 72,
+          height: 76,
+          paddingTop: 8,
           paddingBottom: 16,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
+          marginTop: 2,
         },
       }}>
       <Tabs.Screen

@@ -266,7 +266,7 @@ export default function GardenScreen() {
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalContent}
+            style={[styles.modalContent, { flex: 1, justifyContent: 'center' }]}
           >
             <AddHabitForm
               onSubmit={handleAddHabit}
@@ -292,10 +292,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)", // Darker overlay for 'Premium' feel
   },
   header: {
-    height: 100, 
+    height: 80, 
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 10,
+    paddingTop: 8,
   },
   title: {
     fontSize: 36,

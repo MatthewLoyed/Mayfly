@@ -5,7 +5,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { HapticType, TactileButton } from '@/components/ui/TactileButton';
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from 'react';
-import { Keyboard, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, StyleSheet, TextInput, View, ScrollView, Platform } from 'react-native';
 import Animated, { LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 
 interface AddHabitFormProps {
@@ -36,9 +36,14 @@ export function AddHabitForm({ onSubmit, onCancel }: AddHabitFormProps) {
       layout={LinearTransition} 
       entering={FadeIn.duration(300)}
       exiting={FadeOut.duration(200)}
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: colors.background, borderRadius: 16, overflow: 'hidden' }]}
     >
-      <ThemedView style={{ backgroundColor: 'transparent' }}>
+      <ScrollView
+         keyboardShouldPersistTaps="handled"
+         showsVerticalScrollIndicator={false}
+         bounces={false}
+      >
+        <ThemedView style={{ backgroundColor: 'transparent' }}>
         <View style={styles.inputContainer}>
           <TextInput
             style={[
@@ -123,6 +128,7 @@ export function AddHabitForm({ onSubmit, onCancel }: AddHabitFormProps) {
           </TactileButton>
         </Animated.View>
       </ThemedView>
+    </ScrollView>
     </Animated.View>
   );
 }
@@ -132,6 +138,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     borderRadius: 16,
+    maxHeight: '85%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

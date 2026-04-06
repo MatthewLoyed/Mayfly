@@ -162,7 +162,7 @@ export function TodoItem({
         <Animated.View
           style={[
             styles.container,
-            { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '22' },
+            { backgroundColor: colors.cardBackground, borderColor: colors.habitStroke + '40' },
             todo.priority && styles.priorityContainer,
             containerAnimatedStyle,
           ]}
@@ -224,24 +224,26 @@ export function TodoItem({
             }}
           >
             <Animated.View style={[textAnimatedStyle, styles.textInnerContainer]}>
-              <ThemedText
-                style={[
-                  styles.text,
-                  todo.completed && styles.completedText,
-                  todo.priority && styles.priorityText,
-                  { flex: 1 }
-                ]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {todo.text}
-              </ThemedText>
+              <View style={styles.textMain}>
+                <ThemedText
+                  style={[
+                    styles.text,
+                    todo.completed && styles.completedText,
+                    todo.priority && styles.priorityText,
+                    { flex: 1 }
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {todo.text}
+                </ThemedText>
+              </View>
 
               {(todo.dueAt || todo.estimatedMinutes != null) && (
                 <View style={styles.metaRow}>
                   {todo.dueAt && (
-                    <View style={styles.metaPill}>
-                      <ThemedText style={styles.metaPillText}>
+                    <View style={[styles.metaPill, { borderColor: colors.habitStroke + '20' }]}>
+                      <ThemedText style={[styles.metaPillText, { color: colors.textSecondary }]}>
                         {format(new Date(todo.dueAt), "p")}
                       </ThemedText>
                     </View>
@@ -250,16 +252,10 @@ export function TodoItem({
                     <View
                       style={[
                         styles.metaPill,
-                        { borderColor: colors.habitStroke + '44' },
-                        (todo.estimatedMinutes <= 5 && styles.metaGreen) ||
-                        (todo.estimatedMinutes > 60 && styles.metaRed) ||
-                        (todo.estimatedMinutes >= 15 &&
-                          todo.estimatedMinutes <= 60 &&
-                          styles.metaOrange) ||
-                        null,
+                        { backgroundColor: colors.habitStroke + '10', borderColor: 'transparent' },
                       ]}
                     >
-                      <ThemedText style={[styles.metaPillText, { color: colors.textSecondary }]}>
+                      <ThemedText style={[styles.metaStatusSmall, { color: colors.textSecondary }]}>
                         {todo.estimatedMinutes}m
                       </ThemedText>
                     </View>
@@ -268,24 +264,6 @@ export function TodoItem({
               )}
             </Animated.View>
           </Pressable>
-
-          {/* Priority indicator */}
-          {todo.priority && !todo.completed && (
-            <View
-              style={[
-                styles.priorityBadge,
-                { backgroundColor: colors.primary },
-              ]}
-            >
-              <ThemedText
-                style={styles.priorityBadgeText}
-                lightColor="#FFFFFF"
-                darkColor="#FFFFFF"
-              >
-                !
-              </ThemedText>
-            </View>
-          )}
 
           {/* Subtle Delete Button for completed tasks */}
           {onDelete && (
@@ -318,9 +296,9 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 14,
     paddingHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 24, // More rounded for premium feel
-    borderWidth: 1,
+    marginVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1.5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -328,8 +306,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   priorityContainer: {
-    backgroundColor: "rgba(108, 92, 231, 0.08)", // Softer purple
-    borderColor: "rgba(108, 92, 231, 0.2)",
+    backgroundColor: "rgba(230, 184, 116, 0.15)", // Increased opacity for gold accent
+    borderColor: "rgba(230, 184, 116, 0.5)", // Stronger border
   },
   activeContainer: {
     elevation: 4,
@@ -369,6 +347,11 @@ const styles = StyleSheet.create({
   priorityText: {
     fontWeight: "600",
   },
+  textInnerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   priorityBadge: {
     width: 20,
     height: 20,
@@ -382,35 +365,28 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  textInnerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  textMain: {
+    flex: 1,
+    marginRight: 8,
   },
   metaRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 4,
     alignItems: "center",
-    marginLeft: 12,
   },
   metaPill: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderRadius: 6,
     paddingVertical: 2,
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
   },
   metaPillText: {
-    fontSize: 12,
+    fontSize: 10,
+    fontWeight: '600',
   },
-  metaGreen: {
-    borderColor: "#2ecc71",
-  },
-  metaOrange: {
-    borderColor: "#f39c12",
-  },
-  metaRed: {
-    borderColor: "#e74c3c",
+  metaStatusSmall: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   deleteActionContainer: {
     marginVertical: 4,

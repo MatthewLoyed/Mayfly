@@ -7,7 +7,7 @@ import { getDatabase } from './database';
 export async function createTodo(
   text: string,
   priority: boolean = false,
-  dueAt: string | null = new Date().toISOString()
+  dueAt: string | null = null
 ): Promise<Todo> {
   const db = await getDatabase();
   const id = `todo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

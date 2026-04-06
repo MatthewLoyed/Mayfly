@@ -268,7 +268,7 @@ export function TodoList({
           </TouchableWithoutFeedback>
           <KeyboardAvoidingView 
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.modalContent}
+            style={[styles.modalContent, { flex: 1, justifyContent: 'center' }]}
           >
             <AddTodoForm
               onSubmit={handleAddTodo}
@@ -285,6 +285,12 @@ export function TodoList({
         onSave={async (details) => {
           if (selected && onSaveDetails) {
             await onSaveDetails(selected.id, details);
+          }
+          setShowDetails(false);
+        }}
+        onDelete={async (id) => {
+          if (onDeleteTodo) {
+            await onDeleteTodo(id);
           }
           setShowDetails(false);
         }}

@@ -6,6 +6,9 @@
     "scheme": "mayfly",
     "plugins": [
       "expo-web-browser"
-    ]
+    ],
+    "android": {
+      "softwareKeyboardLayoutMode": "resize"
+    }
   }
 }

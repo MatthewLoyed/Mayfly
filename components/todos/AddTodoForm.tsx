@@ -4,7 +4,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { HapticType, TactileButton } from '../ui/TactileButton';
 import React, { useState } from 'react';
-import { Keyboard, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, StyleSheet, TextInput, View, ScrollView, Platform } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
 interface AddTodoFormProps {
@@ -32,8 +32,13 @@ export function AddTodoForm({ onSubmit, onCancel }: AddTodoFormProps) {
   };
 
   return (
-    <Animated.View layout={LinearTransition} style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.inputContainer}>
+    <Animated.View layout={LinearTransition} style={[styles.container, { backgroundColor: colors.background, borderRadius: 16, overflow: 'hidden' }]}>
+      <ScrollView 
+        keyboardShouldPersistTaps="handled" 
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View style={styles.inputContainer}>
         <TextInput
           style={[
             styles.input,
@@ -92,7 +97,8 @@ export function AddTodoForm({ onSubmit, onCancel }: AddTodoFormProps) {
             Add
           </ThemedText>
         </TactileButton>
-      </Animated.View>
+        </Animated.View>
+      </ScrollView>
     </Animated.View>
   );
 }
@@ -102,6 +108,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     marginBottom: 8,
+    maxHeight: '85%',
   },
   inputContainer: {
     marginBottom: 12,

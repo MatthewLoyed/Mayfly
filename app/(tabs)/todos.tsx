@@ -10,6 +10,7 @@ import { generateMessage, getTodoCompletionContext } from '@/services/message-ge
 import { createTodo, deleteTodo, getAllTodos, toggleTodo, updateTodoDetails } from '@/services/todo-service';
 import { type Todo } from '@/types/todo';
 import React, { useEffect, useState } from 'react';
+import { useTodos } from '@/contexts/TodoContext';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackgroundEnvironment } from '@/components/ui/BackgroundEnvironment';
@@ -18,36 +19,26 @@ import { BackgroundEnvironment } from '@/components/ui/BackgroundEnvironment';
  * Todo list screen
  */
 export default function TodosScreen() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const { 
+    todos, 
+    isLoading, 
+    addTodo, 
+    toggleTodo: toggleTodoContext, 
+    deleteTodo: deleteTodoContext, 
+    updateTodoDetails: updateTodoDetailsContext,
+    refreshTodos 
+  } = useTodos();
   const [message, setMessage] = useState<string | null>(null);
   const [showMessage, setShowMessage] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'dark'];
-
-  useEffect(() => {
-    loadTodos();
-  }, []);
-
-  const loadTodos = async () => {
-    try {
-      await initDatabase();
-      const allTodos = await getAllTodos(true);
-      setTodos(allTodos);
-    } catch (error) {
-      console.error('Error loading todos:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSaveDetails = async (
     todoId: string,
     details: { dueAt: string | null; estimatedMinutes: number | null }
   ) => {
     try {
-      await updateTodoDetails(todoId, details);
-      await loadTodos();
+      await updateTodoDetailsContext(todoId, details);
     } catch (e) {
       console.error('Error updating todo details:', e);
     }
@@ -59,14 +50,11 @@ export default function TodosScreen() {
       const currentTodo = todos.find((t) => t.id === todoId);
       const wasCompleted = currentTodo?.completed ?? false;
 
-      const updatedTodo = await toggleTodo(todoId);
-
-      // Reload todos
-      await loadTodos();
+      const updatedTodo = await toggleTodoContext(todoId);
 
       // Only show message if we're completing a todo (not unchecking it)
       if (!wasCompleted && updatedTodo.completed) {
-        // Check if all todos are done
+        // Fetch fresh stats for the message
         const updatedTodos = await getAllTodos(true);
         const completedCount = updatedTodos.filter((t) => t.completed).length;
         const totalCount = updatedTodos.length;
@@ -101,11 +89,7 @@ export default function TodosScreen() {
 
   const handleAddTodo = async (text: string, priority: boolean) => {
     try {
-      console.log('[TodosScreen] handleAddTodo', { text, priority });
-      await createTodo(text, priority);
-      console.log('[TodosScreen] createTodo ok');
-      await loadTodos();
-      console.log('[TodosScreen] loadTodos after create ok');
+      await addTodo(text, priority);
     } catch (error) {
       console.error('Error adding todo:', error);
     }
@@ -121,9 +105,7 @@ export default function TodosScreen() {
 
   const handleDeleteTodo = async (todoId: string) => {
     try {
-      await deleteTodo(todoId);
-      // Removed haptics for delete as it might be too aggressive, rely on visual cue
-      await loadTodos();
+      await deleteTodoContext(todoId);
     } catch (e) {
       console.error('Failed to delete todo', e);
     }
@@ -142,7 +124,7 @@ export default function TodosScreen() {
             onAddTodo={handleAddTodo}
             onSaveDetails={handleSaveDetails}
             onDeleteTodo={handleDeleteTodo}
-            onRefresh={loadTodos}
+            onRefresh={refreshTodos}
             emptyMessage="No todos yet! Add one to get started!"
           />
 

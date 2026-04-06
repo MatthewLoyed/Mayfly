@@ -6,7 +6,6 @@ import {
   Pressable, 
   TextInput, 
   Modal, 
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView
@@ -60,115 +59,138 @@ export function LogSessionDialog({
       animationType="none"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={styles.overlay}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-          <Animated.View 
-            entering={FadeIn.duration(200)} 
-            exiting={FadeOut.duration(200)} 
-            style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.4)' }]} 
-          />
-        </Pressable>
+      {/* Backdrop */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+        <Animated.View 
+          entering={FadeIn.duration(200)} 
+          exiting={FadeOut.duration(200)} 
+          style={[styles.backdrop]} 
+        />
+      </Pressable>
 
-        <View style={styles.sheetContainer}>
-          <Animated.View 
-            entering={SlideInDown.duration(350)}
-            exiting={SlideOutDown.duration(250)}
-            style={[styles.sheet, { backgroundColor: theme.cardBackground }]}
+      {/*
+        KEY FIX: KeyboardAvoidingView wraps only the sheet, not the whole modal.
+        behavior="padding" adds padding to the bottom of the sheet when the
+        keyboard appears, so the ScrollView content can scroll up — but the
+        sheet itself does NOT move up off screen.
+        
+        On Android, set "softwareKeyboardLayoutMode": "resize" in app.json
+        under "android" so the modal resizes instead of panning.
+      */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.sheetContainer}
+        // No keyboardVerticalOffset needed — sheet is at the bottom of the screen
+        // with no navigation header above it
+      >
+        <Animated.View 
+          entering={SlideInDown.duration(350)}
+          exiting={SlideOutDown.duration(250)}
+          style={[styles.sheet, { backgroundColor: theme.cardBackground }]}
+        >
+          {/* Header sits outside ScrollView so it never scrolls away */}
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Log Your Progress</Text>
+            <Pressable 
+              onPress={onClose}
+              style={[styles.closeButton, { backgroundColor: theme.backgroundSubtle }]}
+            >
+              <X size={20} color={theme.icon} />
+            </Pressable>
+          </View>
+
+          {/*
+            ScrollView lets the user scroll up to see duration buttons
+            while the keyboard is open. keyboardShouldPersistTaps="handled"
+            means tapping "Log Session" while keyboard is open works on
+            the first tap instead of just dismissing the keyboard.
+          */}
+          <ScrollView
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
-            <View style={styles.header}>
-              <Text style={[styles.headerTitle, { color: theme.text }]}>Log Your Progress</Text>
-              <Pressable 
-                onPress={onClose}
-                style={[styles.closeButton, { backgroundColor: theme.backgroundSubtle }]}
-              >
-                <X size={20} color={theme.icon} />
-              </Pressable>
+            <View style={styles.section}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>How long did you practice?</Text>
+              <View style={styles.durationGrid}>
+                {quickDurations.map((mins) => {
+                  const isSelected = duration === mins;
+                  return (
+                    <Pressable
+                      key={mins}
+                      onPress={() => {
+                        setDuration(mins);
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}
+                      style={[
+                        styles.durationItem,
+                        { 
+                          backgroundColor: isSelected ? `${pursuitColor}99` : `${pursuitColor}22`,
+                          borderColor: isSelected ? pursuitColor : 'transparent',
+                        }
+                      ]}
+                    >
+                      <Text style={[styles.durationText, { color: theme.text }]}>{mins} min</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View style={styles.customDurationRow}>
+                <TextInput
+                  value={duration.toString()}
+                  onChangeText={(t) => setDuration(parseInt(t) || 0)}
+                  keyboardType="numeric"
+                  style={[styles.customInput, { borderColor: theme.habitStroke + '33', color: theme.text }]}
+                />
+                <Text style={[styles.customLabel, { color: theme.textSecondary }]}>minutes</Text>
+              </View>
             </View>
 
-            <ScrollView bounces={false} style={styles.content}>
-              <View style={styles.section}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>How long did you practice?</Text>
-                <View style={styles.durationGrid}>
-                  {quickDurations.map((mins) => {
-                    const isSelected = duration === mins;
-                    return (
-                      <Pressable
-                        key={mins}
-                        onPress={() => {
-                          setDuration(mins);
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }}
-                        style={[
-                          styles.durationItem,
-                          { 
-                            backgroundColor: isSelected ? `${pursuitColor}99` : `${pursuitColor}22`,
-                            borderColor: isSelected ? pursuitColor : 'transparent',
-                          }
-                        ]}
-                      >
-                        <Text style={[styles.durationText, { color: theme.text }]}>{mins} min</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+            <View style={styles.section}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Add a note (optional)</Text>
+              <TextInput
+                value={note}
+                onChangeText={setNote}
+                placeholder="What did you work on?"
+                placeholderTextColor={theme.icon}
+                multiline
+                numberOfLines={3}
+                style={[styles.textArea, { borderColor: theme.habitStroke + '33', color: theme.text }]}
+              />
+            </View>
 
-                <View style={styles.customDurationRow}>
-                    <TextInput
-                        value={duration.toString()}
-                        onChangeText={(t) => setDuration(parseInt(t) || 0)}
-                        keyboardType="numeric"
-                        style={[styles.customInput, { borderColor: theme.habitStroke + '33', color: theme.text }]}
-                    />
-                    <Text style={[styles.customLabel, { color: theme.textSecondary }]}>minutes</Text>
-                </View>
-              </View>
-
-              <View style={styles.section}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>Add a note (optional)</Text>
-                <TextInput
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="What did you work on?"
-                  placeholderTextColor={theme.icon}
-                  multiline
-                  numberOfLines={3}
-                  style={[styles.textArea, { borderColor: theme.habitStroke + '33', color: theme.text }]}
-                />
-              </View>
-
-              <Pressable
-                onPress={() => {
-                    handleSubmit();
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }}
-                disabled={!duration || duration <= 0}
-                style={({ pressed }) => [
-                  styles.submitButton,
-                  { backgroundColor: pursuitColor },
-                  (!duration || duration <= 0) && styles.submitButtonDisabled,
-                  pressed && styles.submitButtonPressed
-                ]}
-              >
-                <Text style={[styles.submitButtonText, { color: theme.background }]}>Log Session</Text>
-              </Pressable>
-            </ScrollView>
-          </Animated.View>
-        </View>
+            <Pressable
+              onPress={() => {
+                handleSubmit();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }}
+              disabled={!duration || duration <= 0}
+              style={({ pressed }) => [
+                styles.submitButton,
+                { backgroundColor: pursuitColor },
+                (!duration || duration <= 0) && styles.submitButtonDisabled,
+                pressed && styles.submitButtonPressed
+              ]}
+            >
+              <Text style={[styles.submitButtonText, { color: theme.background }]}>Log Session</Text>
+            </Pressable>
+          </ScrollView>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
+  // KEY FIX: sheetContainer is no longer flex:1 with justifyContent:'flex-end'
+  // Instead, KAV itself is anchored to the bottom using justifyContent flex-end
+  // so it only occupies the space the sheet needs, not the full screen height.
   sheetContainer: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -178,7 +200,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
+    // Use safe area bottom inset instead of hardcoded padding
     paddingBottom: Platform.OS === 'ios' ? 48 : 32,
+    // Cap the sheet height so it never takes over the full screen
+    maxHeight: '85%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.1,
@@ -204,8 +229,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: {
-    flexGrow: 0,
+  scrollContent: {
+    paddingBottom: 8,
   },
   section: {
     marginBottom: 24,
