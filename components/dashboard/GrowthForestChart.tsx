@@ -80,6 +80,9 @@ export function GrowthForestChart({ data, colors }: GrowthForestChartProps) {
             <ThemedText type="defaultSemiBold" style={styles.chartTitle}>
                 Growth Forest
             </ThemedText>
+            <ThemedText style={styles.chartSubtitle}>
+                Weekly completion volume
+            </ThemedText>
 
             <View style={styles.chartArea}>
                 {/* Y-Axis Column */}
@@ -140,9 +143,15 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     chartTitle: {
-        marginBottom: 24,
+        marginBottom: 4,
         fontSize: 18,
         letterSpacing: 0.5,
+    },
+    chartSubtitle: {
+        fontSize: 12,
+        color: 'rgba(255, 255, 255, 0.4)',
+        marginBottom: 24,
+        fontWeight: '500',
     },
     chartArea: {
         flexDirection: 'row',

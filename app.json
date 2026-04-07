@@ -5,7 +5,9 @@
     "version": "1.0.0",
     "scheme": "mayfly",
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-router",
+      "expo-sqlite"
     ],
     "android": {
       "softwareKeyboardLayoutMode": "resize"

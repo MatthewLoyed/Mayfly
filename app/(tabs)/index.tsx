@@ -30,12 +30,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeInUp, ZoomIn } from "react-native-reanimated";
-import { Flame, Sprout, Target } from "lucide-react-native";
+import { Flame, Sprout, Target, Info } from "lucide-react-native";
 import { BackgroundEnvironment } from "@/components/ui/BackgroundEnvironment";
 import { ButterflyHero } from "../../components/dashboard/ButterflyHero";
 import { GrowthForestChart } from "../../components/dashboard/GrowthForestChart";
 import { LivingProgressBar } from "../../components/dashboard/LivingProgressBar";
 import { RecapSection } from "../../components/dashboard/RecapSection";
+import { DashboardInfoDialog } from "../../components/dashboard/DashboardInfoDialog";
 import { TactileButton, HapticType } from "@/components/ui/TactileButton";
 import { getRandomQuote } from "../../constants/quotes";
 import { type Habit } from "@/types/habit";
@@ -68,6 +69,7 @@ export default function DashboardScreen() {
   const [longestStreak, setLongestStreak] = useState(0);
   const [totalCompletions, setTotalCompletions] = useState(0);
   const [loginStreak, setLoginStreak] = useState(0);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   const priorityTodos = useMemo(() => {
     return todos
@@ -216,9 +218,18 @@ export default function DashboardScreen() {
           entering={FadeInDown.delay(500).duration(800).springify()}
           style={[styles.section, { padding: isSmallScreen ? 16 : 24, marginTop: 12 }]}
         >
-          <ThemedText type="titleRounded" style={[styles.sectionTitle, { color: colors.text }]}>
-            Ecosystem Growth
-          </ThemedText>
+          <View style={styles.sectionHeaderRow}>
+            <ThemedText type="titleRounded" style={[styles.sectionTitle, { color: colors.text }]}>
+              Ecosystem Growth
+            </ThemedText>
+            <TactileButton
+              onPress={() => setIsInfoOpen(true)}
+              style={styles.infoTrigger}
+              hapticType={HapticType.Selection}
+            >
+              <Info size={20} color={colors.primary} />
+            </TactileButton>
+          </View>
 
     <View style={styles.statsLayout}>
             
@@ -246,7 +257,7 @@ export default function DashboardScreen() {
           >
             {longestStreak}
           </Animated.Text>
-          <ThemedText style={[styles.statTitle, { color: colors.icon }]}>Best Streak</ThemedText>
+          <ThemedText style={[styles.statTitle, { color: colors.icon }]}>Best Habit</ThemedText>
         </View>
       </TactileButton>
 
@@ -278,7 +289,10 @@ export default function DashboardScreen() {
             >
               {habitsCompleted}/{totalHabits}
             </Animated.Text>
-            <ThemedText style={[styles.miniLabel, { color: colors.icon }]} numberOfLines={1}>Planted</ThemedText>
+            <View style={styles.miniLabelRow}>
+              <ThemedText style={[styles.miniLabel, { color: colors.icon }]} numberOfLines={1}>Planted</ThemedText>
+              <ThemedText style={[styles.microLabel, { color: colors.icon }]}>Today</ThemedText>
+            </View>
           </View>
         </TactileButton>
 
@@ -307,7 +321,10 @@ export default function DashboardScreen() {
             >
               {totalCompletions}
             </Animated.Text>
-            <ThemedText style={[styles.miniLabel, { color: colors.icon }]} numberOfLines={1}>Harvests</ThemedText>
+            <View style={styles.miniLabelRow}>
+              <ThemedText style={[styles.miniLabel, { color: colors.icon }]} numberOfLines={1}>Harvests</ThemedText>
+              <ThemedText style={[styles.microLabel, { color: colors.icon }]}>Lifetime</ThemedText>
+            </View>
           </View>
         </TactileButton>
       </View>
@@ -336,6 +353,11 @@ export default function DashboardScreen() {
         </Animated.View>
 
       </ScrollView>
+
+      <DashboardInfoDialog 
+        isOpen={isInfoOpen} 
+        onClose={() => setIsInfoOpen(false)} 
+      />
     </SafeAreaView>
     </BackgroundEnvironment>
   );
@@ -366,10 +388,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   sectionTitle: {
-    marginBottom: 20,
-    marginLeft: 8,
     fontFamily: 'System',
     fontSize: 22,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingRight: 8,
+  },
+  infoTrigger: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statsLayout: {
     flexDirection: 'row',
@@ -453,9 +487,19 @@ const styles = StyleSheet.create({
   },
   miniLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  microLabel: {
+    fontSize: 8,
+    fontWeight: '500',
+    opacity: 0.6,
+    marginLeft: 4,
+  },
+  miniLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   swipeHint: {
     alignItems: 'center',

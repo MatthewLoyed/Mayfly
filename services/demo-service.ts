@@ -1,7 +1,7 @@
 import { format, subDays } from 'date-fns';
 import { getDatabase } from './database';
 import { createHabit, getAllHabits } from './habit-service';
-import { createTodo, getAllTodos } from './todo-service';
+import { createTodo, getAllTodos, toggleTodo } from './todo-service';
 import { AppIcons } from '@/constants/icons';
 
 /**
@@ -20,22 +20,14 @@ export async function seedDemoData(): Promise<void> {
     [startDate]
   )) as { count: number } | undefined;
 
-  if (existingCompletions && existingCompletions.count > 5) {
-    // Hotfix: Ensure existing icons are valid (migrating from hallucinated names)
-    await db.execAsync(`
-      UPDATE habits SET icon = '${AppIcons.walk}' WHERE icon = 'footprints';
-      UPDATE habits SET icon = '${AppIcons.water}' WHERE icon = 'droplet';
-      UPDATE habits SET icon = '${AppIcons.barbell}' WHERE icon = 'dumbbell';
-      UPDATE habits SET icon = '${AppIcons.book}' WHERE icon = 'book-open';
-      UPDATE habits SET icon = '${AppIcons.flame}' WHERE icon = 'flame-sharp';
-    `);
-    
-    // Already has enough data for a demo
-    console.log('Skipping seed: Data already exists, icons hotfixed');
-    return;
-  }
-
-  console.log('Seeding demo data for Mayfly...');
+  // 1.5 Hotfix: Ensure existing icons are valid (migrating from hallucination names)
+  await db.execAsync(`
+    UPDATE habits SET icon = '${AppIcons.walk}' WHERE icon = 'footprints';
+    UPDATE habits SET icon = '${AppIcons.water}' WHERE icon = 'droplet';
+    UPDATE habits SET icon = '${AppIcons.barbell}' WHERE icon = 'dumbbell';
+    UPDATE habits SET icon = '${AppIcons.book}' WHERE icon = 'book-open';
+    UPDATE habits SET icon = '${AppIcons.flame}' WHERE icon = 'flame-sharp';
+  `);
 
   // 2. Ensure we have at least 4 habits
   let habits = await getAllHabits();
@@ -55,7 +47,39 @@ export async function seedDemoData(): Promise<void> {
     habits = await getAllHabits();
   }
 
-  // 3. Generate random completions for the last 14 days
+  // 3. Seed some demo todos if none exist or if we need more for the demo
+  const existingTodos = await getAllTodos(true);
+  if (existingTodos.length < 8) {
+      const demoTodos = [
+          { text: 'Finalize Honors Thesis', priority: true, completed: true },
+          { text: 'Pack for symposium presentation', priority: true, completed: false },
+          { text: 'Buy groceries for dinner', priority: false, completed: true },
+          { text: 'Submit final project report', priority: true, completed: false },
+          { text: 'Update portfolio website', priority: false, completed: false },
+          { text: 'Morning Jog - 5km', priority: false, completed: true },
+          { text: 'Call Grandma', priority: false, completed: false },
+          { text: 'Refactor Auth Service', priority: true, completed: false },
+          { text: 'Review Pull Requests', priority: false, completed: true },
+          { text: 'Prepare weekly meal plan', priority: false, completed: false }
+      ];
+      
+      for (const dt of demoTodos) {
+          if (!existingTodos.find(t => t.text === dt.text)) {
+              const todo = await createTodo(dt.text, dt.priority);
+              if (dt.completed) {
+                  await toggleTodo(todo.id);
+              }
+          }
+      }
+  }
+
+  if (existingCompletions && existingCompletions.count > 5) {
+    // Already has enough completion data for a chart
+    console.log('Skipping chart seed: Data already exists, icons hotfixed');
+    return;
+  }
+
+  // 4. Generate random completions for the last 14 days
   const now = new Date();
   for (let i = 0; i < 14; i++) {
     const date = subDays(now, i);
@@ -101,23 +125,7 @@ export async function seedDemoData(): Promise<void> {
     );
   }
 
-  // 5. Seed some demo todos if none exist
-  const existingTodos = await getAllTodos(false);
-  if (existingTodos.length < 3) {
-      const demoTodos = [
-          { text: 'Finalize Honors Thesis', priority: true },
-          { text: 'Pack for symposium presentation', priority: true },
-          { text: 'Buy groceries for dinner', priority: false },
-          { text: 'Submit final project report', priority: true },
-          { text: 'Update portfolio website', priority: false }
-      ];
-      
-      for (const dt of demoTodos) {
-          if (!existingTodos.find(t => t.text === dt.text)) {
-              await createTodo(dt.text, dt.priority);
-          }
-      }
-  }
+  // (Removed duplicate todos seeding block)
 
   // 6. Update streaks for habits (simplified calculation for demo)
   for (const habit of habits) {
